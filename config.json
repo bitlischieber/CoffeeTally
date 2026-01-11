@@ -1,0 +1,14 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "root",
+    "password": "T1l6^Y$2,d]M",
+    "database": "coffee_tally"
+  },
+  "card_reader": {
+    "port": "COM3",
+    "baudrate": 9600,
+    "timeout": 0.1
+  }
+}
