@@ -2,8 +2,8 @@
   "database": {
     "host": "localhost",
     "port": 3306,
-    "user": "root",
-    "password": "T1l6^Y$2,d]M",
+    "user": "",
+    "password": "",
     "database": "coffee_tally"
   },
   "card_reader": {
