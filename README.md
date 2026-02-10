@@ -31,13 +31,13 @@ A touchscreen-friendly coffee credit management system with card reader support 
 ### Step 1: Installation
 **Windows:**
 ```cmd
-cd c:\work\Vario\coffeetally\srcKivy
+cd c:\work\Vario\coffeetally\src
 install.bat
 ```
 
 **Linux/Raspberry Pi:**
 ```bash
-cd /path/to/coffeetally/srcKivy
+cd /path/to/coffeetally/src
 chmod +x install.sh run.sh
 ./install.sh
 ```
@@ -105,7 +105,7 @@ run.bat
 
 3. **Clone/Download the project**
    ```cmd
-   cd c:\work\Vario\coffeetally\srcKivy
+   cd c:\work\Vario\coffeetally\src
    ```
 
 4. **Run installation script**
@@ -134,7 +134,7 @@ run.bat
 
 3. **Navigate to project folder**
    ```bash
-   cd /path/to/coffeetally/srcKivy
+   cd /path/to/coffeetally/src
    ```
 
 4. **Run installation script**
@@ -206,7 +206,7 @@ Edit `config.json` with your settings:
     "table": "users"
   },
   "card_reader": {
-    "port": "COM10",          // Windows: "COM10", Linux: "/dev/ttyUSB0"
+    "port": "COM10",          // Windows e.g.: "COM10", Linux: "ttyACM0"
     "baudrate": 9600,
     "timeout": 0.1
   }
@@ -319,7 +319,7 @@ For production, you may want to run the app as a Windows service or use Task Sch
    unclutter -idle 0 &
    
    # Start Coffee Tally
-   cd /path/to/coffeetally/srcKivy
+   cd /path/to/coffeetally/src
    ./run.sh
    ```
 
@@ -376,7 +376,7 @@ For production, you may want to run the app as a Windows service or use Task Sch
 ## File Structure
 
 ```
-srcKivy/
+src/
 ├── main.py                 # Main application file
 ├── card_reader.py          # Card reader communication module
 ├── database.py             # Database operations module
