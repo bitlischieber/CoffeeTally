@@ -1,48 +1,67 @@
 @echo off
-REM Installationsskript für Windows
-echo === Coffee Tally Installation ===
+REM Coffee Tally - Installation Script for Windows
+echo ========================================
+echo Coffee Tally - Installation
+echo ========================================
 echo.
 
-REM Prüfe ob Python installiert ist
+REM Check if Python is installed
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo FEHLER: Python ist nicht installiert oder nicht im PATH!
-    echo Bitte installieren Sie Python von https://www.python.org/
+    echo ERROR: Python is not installed or not in PATH
+    echo Please install Python 3.8 or higher from https://www.python.org/
     pause
     exit /b 1
 )
 
-echo Python gefunden.
+echo Python found:
+python --version
 echo.
 
-REM Erstelle virtuelles Environment
-echo Erstelle virtuelles Environment...
+REM Create virtual environment
+echo Creating Python virtual environment...
 python -m venv venv
 if errorlevel 1 (
-    echo FEHLER: Konnte virtuelles Environment nicht erstellen!
+    echo ERROR: Could not create virtual environment
     pause
     exit /b 1
 )
+echo Virtual environment created successfully
+echo.
 
-echo Aktiviere virtuelles Environment...
+REM Activate virtual environment and install packages
+echo Installing required packages...
 call venv\Scripts\activate.bat
-
-echo Installiere Python-Pakete...
-pip install --upgrade pip
+python -m pip install --upgrade pip
 pip install -r requirements.txt
-
 if errorlevel 1 (
-    echo FEHLER: Installation der Pakete fehlgeschlagen!
+    echo ERROR: Could not install required packages
     pause
     exit /b 1
 )
+echo.
 
+REM Create config.json from template if it doesn't exist
+if not exist config.json (
+    echo Creating config.json from template...
+    copy config.json.template config.json
+    echo.
+    echo IMPORTANT: Please edit config.json and configure:
+    echo   - Database connection settings
+    echo   - Card reader COM port
+    echo.
+) else (
+    echo config.json already exists, skipping template copy
+    echo.
+)
+
+echo ========================================
+echo Installation completed successfully!
+echo ========================================
 echo.
-echo === Installation erfolgreich abgeschlossen! ===
-echo.
-echo Naechste Schritte:
-echo 1. Bearbeiten Sie config.json mit Ihren Datenbank- und Kartenleser-Einstellungen
-echo 2. Fuehren Sie database_setup.py aus, um die Datenbank einzurichten
-echo 3. Starten Sie die Anwendung mit: python main.py
+echo Next steps:
+echo 1. Edit config.json with your database and COM port settings
+echo 2. Set up the MySQL database (see README.md)
+echo 3. Run the application with: run.bat
 echo.
 pause

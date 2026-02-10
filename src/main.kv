@@ -1,0 +1,140 @@
+#:import dp kivy.metrics.dp
+
+<RootLayout@FloatLayout>:
+    canvas.before:
+        Rectangle:
+            source: "vs_back.png"
+            pos: self.pos
+            size: self.size
+
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(40)
+        spacing: dp(30)
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        size_hint: (0.9, 0.9)
+        
+        MDLabel:
+            id: main_label
+            text: app.main_text
+            halign: "left"
+            font_style: "H3"
+            theme_text_color: "Custom"
+            text_color: (1, 1, 1, 1)
+
+        Image:
+            source: "coffee_cup.png"
+            size_hint: (None, None)
+            size: (dp(170), dp(170))
+            halign: "center"
+            pos_hint: {"center_x": 0.5}
+
+        MDCard:
+            id: user_info_card
+            orientation: "vertical"
+            size_hint: (None, None)
+            size: (dp(800), dp(150))
+            padding: (dp(20), dp(20))
+            pos_hint: {"center_x": 0.5}
+            elevation: 10
+            md_bg_color: app.theme_cls.primary_color
+            opacity: 0
+
+            MDLabel:
+                id: user_info_label
+                text: ""
+                halign: "center"
+                font_style: "H5"
+                theme_text_color: "Custom"
+                text_color: (1, 1, 1, 1)
+
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(20)
+            pos_hint: {"center_x": 0.5}
+
+            MDRaisedButton:
+                text: "Charge credit"
+                size_hint: (1, 1)
+                md_bg_color: app.theme_cls.primary_color
+                font_size: "32sp"
+                on_release: app.show_charge_dialog(self)
+
+            MDRaisedButton:
+                text: "Show credit"
+                size_hint: (1, 1)
+                md_bg_color: app.theme_cls.accent_color
+                font_size: "32sp"
+                on_release: app.show_credit_dialog(self)
+
+<ErrorLayout@MDBoxLayout>:
+    orientation: "vertical"
+    padding: dp(20)
+    spacing: dp(20)
+
+    MDLabel:
+        text: app.error_text
+        halign: "center"
+        font_style: "H5"
+
+<ChargeDialogContent@MDBoxLayout>:
+    orientation: "vertical"    
+    spacing: dp(20)
+    padding: dp(20)
+    size_hint_y: None
+    height: self.minimum_height    
+
+    MDLabel:
+        text: "Select amount to charge"
+        font_style: "H5"
+        halign: "center"
+        size_hint_y: None
+
+    MDBoxLayout:
+        orientation: "horizontal"
+        halign: "center"
+        spacing: dp(10)
+        size_hint_y: None
+
+        MDRaisedButton:
+            text: "-"
+            size_hint_x: 0.2
+            size_hint_y: None
+            on_release: app.change_charge_amount(-1)
+
+        MDLabel:
+            text: str(app.charge_amount)
+            font_style: "H4"
+            halign: "center"
+            size_hint_x: 0.4
+            size_hint_y: None
+            size: self.texture_size
+
+        MDRaisedButton:
+            text: "+"
+            size_hint_x: 0.2
+            size_hint_y: None
+            on_release: app.change_charge_amount(1)
+
+        MDRaisedButton:
+            text: "+10"
+            size_hint_x: 0.2
+            size_hint_y: None
+            on_release: app.change_charge_amount(10)
+    
+    MDBoxLayout:
+        orientation: "vertical"    
+        height: dp(50)
+        size_hint_y: None
+
+<WaitCardDialogContent@MDBoxLayout>:
+    orientation: "vertical"
+    spacing: dp(20)
+    padding: dp(20)
+    size_hint_y: None
+    height: self.minimum_height
+
+    MDLabel:
+        text: app.wait_prompt_text
+        halign: "center"
+        font_style: "H5"

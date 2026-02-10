@@ -1,236 +1,443 @@
 # Coffee Tally
 
-Eine moderne Python-Anwendung zur Verwaltung von Kaffeeguthaben mit Kartenleser-Support. Die Anwendung läuft im Vollbild-Kiosk-Modus und ermöglicht das Aufladen und Abziehen von Kaffeeguthaben über RFID-Karten.
+A touchscreen-friendly coffee credit management system with card reader support for Windows and Linux (Raspberry Pi).
 
-## Funktionen
+## Features
 
-- **Guthaben abziehen**: Automatisches Abziehen von Guthaben bei Kartenpräsentation
-- **Guthaben aufladen**: Aufladen von Guthaben in konfigurierbaren Beträgen
-- **Guthaben anzeigen**: Anzeige des aktuellen Guthabens
-- **Vollbild-Kiosk-Modus**: Moderne UI im Vollbildmodus
-- **Kartenleser-Integration**: Unterstützung für Eltatec TWN4 Kartenleser über COM-Port
-- **MySQL-Datenbank**: Speicherung der Benutzerdaten und Guthabenstände
+- 🖥️ **Full-screen kiosk mode** for touchscreen displays
+- 💳 **Card reader support** - Eltatec TWN4 via serial/COM port
+- 🗄️ **MySQL database** - Stores user cards and credits
+- 🌍 **Bilingual interface** - English and German
+- 📱 **Modern UI** - Built with Kivy and KivyMD
+- ⚡ **Cross-platform** - Works on Windows and Linux/Raspberry Pi
 
-## Voraussetzungen
+## System Requirements
 
-- Python 3.8 oder höher
-- MySQL-Server 5.7 oder höher
-- Eltatec TWN4 Kartenleser (optional, für Testmodus)
-- Windows 10/11 oder Linux (Raspberry Pi getestet)
+### Windows
+- Python 3.8 or higher
+- MySQL Server
+- Eltatec TWN4 card reader (connected via COM port)
+
+### Linux/Raspberry Pi
+- Python 3.8 or higher
+- MySQL Server or MariaDB
+- Eltatec TWN4 card reader (connected via USB serial)
+- Additional system libraries (installed automatically by install.sh)
 
 ## Installation
 
-### Windows
+## Quick Start (5 Minutes)
 
-1. Öffnen Sie eine Eingabeaufforderung (cmd) oder PowerShell
-2. Navigieren Sie zum Projektverzeichnis
-3. Führen Sie das Installationsskript aus:
+### Step 1: Installation
+**Windows:**
+```cmd
+cd c:\work\Vario\coffeetally\srcKivy
+install.bat
+```
+
+**Linux/Raspberry Pi:**
+```bash
+cd /path/to/coffeetally/srcKivy
+chmod +x install.sh run.sh
+./install.sh
+```
+
+### Step 2: Database Setup
+1. Start MySQL/MariaDB server
+2. Run the SQL setup script:
+   ```bash
+   mysql -u root -p < database_setup.sql
+   ```
+
+### Step 3: Configuration
+1. Edit `config.json` (created from template):
+   - Set MySQL username and password
+   - Set card reader port (Windows: COM10, Linux: /dev/ttyUSB0)
+
+### Step 4: Test Card Reader (Optional)
+**Windows:**
+```cmd
+venv\Scripts\activate
+python test_card_reader.py
+```
+
+**Linux:**
+```bash
+source venv/bin/activate
+python test_card_reader.py
+```
+
+### Step 5: Add Users
+**Windows:**
+```cmd
+venv\Scripts\activate
+python manage_users.py
+```
+
+**Linux:**
+```bash
+source venv/bin/activate
+python manage_users.py
+```
+
+### Step 6: Run the Application
+**Windows:**
+```cmd
+run.bat
+```
+
+**Linux/Raspberry Pi:**
+```bash
+./run.sh
+```
+
+### Development Environment Setup
+
+#### Windows
+
+1. **Install Python**
+   - Download Python 3.8+ from [python.org](https://www.python.org/)
+   - Make sure to check "Add Python to PATH" during installation
+
+2. **Install MySQL**
+   - Download MySQL Community Server from [mysql.com](https://dev.mysql.com/downloads/mysql/)
+   - Or use XAMPP/WAMP for easier setup
+
+3. **Clone/Download the project**
+   ```cmd
+   cd c:\work\Vario\coffeetally\srcKivy
+   ```
+
+4. **Run installation script**
    ```cmd
    install.bat
    ```
-4. Das Skript erstellt automatisch ein virtuelles Environment und installiert alle notwendigen Pakete
 
-### Linux / Raspberry Pi
+5. **Configure the application**
+   - Edit `config.json` with your settings:
+     - Database credentials
+     - COM port for card reader (e.g., COM10)
 
-1. Öffnen Sie ein Terminal
-2. Navigieren Sie zum Projektverzeichnis
-3. Machen Sie das Installationsskript ausführbar (falls nötig):
+#### Linux/Raspberry Pi
+
+1. **Install Python and dependencies**
+   ```bash
+   sudo apt-get update
+   sudo apt-get install python3 python3-pip python3-venv
+   ```
+
+2. **Install MySQL/MariaDB**
+   ```bash
+   sudo apt-get install mariadb-server
+   sudo mysql_secure_installation
+   ```
+
+3. **Navigate to project folder**
+   ```bash
+   cd /path/to/coffeetally/srcKivy
+   ```
+
+4. **Run installation script**
    ```bash
    chmod +x install.sh
-   ```
-4. Führen Sie das Installationsskript aus:
-   ```bash
    ./install.sh
    ```
-5. Das Skript erstellt automatisch ein virtuelles Environment und installiert alle notwendigen Pakete
 
-### Manuelle Installation
+5. **Configure the application**
+   - Edit `config.json` with your settings:
+     - Database credentials
+     - Serial port for card reader (e.g., /dev/ttyUSB0)
 
-Falls Sie die Installationsskripte nicht verwenden möchten:
+### Database Setup
 
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+1. **Create the database and table**
 
-# Linux / Raspberry Pi
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
+   Connect to MySQL:
+   ```bash
+   mysql -u root -p
+   ```
 
-## Konfiguration
+   Create database and table:
+   ```sql
+   CREATE DATABASE coffee_tally;
+   USE coffee_tally;
 
-1. Bearbeiten Sie die Datei `config.json` mit Ihren Einstellungen:
+   CREATE TABLE users (
+       id INT AUTO_INCREMENT PRIMARY KEY,
+       card_id VARCHAR(50) UNIQUE NOT NULL,
+       name VARCHAR(100) NOT NULL,
+       credit INT DEFAULT 0,
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+   );
+   ```
+
+      You can also run the included SQL script instead:
+      ```bash
+      mysql -u root -p < database_setup.sql
+      ```
+
+2. **Add test users (optional)**
+   ```sql
+   INSERT INTO users (card_id, name, credit) VALUES
+   ('04A1B2C3D4E5F6', 'John Doe', 10),
+   ('04F6E5D4C3B2A1', 'Jane Smith', 5);
+   ```
+
+3. **Create MySQL user for the application**
+   ```sql
+   CREATE USER 'coffee_user'@'localhost' IDENTIFIED BY 'your_secure_password';
+   GRANT ALL PRIVILEGES ON coffee_tally.* TO 'coffee_user'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
+### Configuration
+
+Edit `config.json` with your settings:
 
 ```json
 {
   "database": {
     "host": "localhost",
     "port": 3306,
-    "user": "root",
-    "password": "IhrPasswort",
-    "database": "coffee_tally"
+    "user": "coffee_user",
+    "password": "your_secure_password",
+    "database": "coffee_tally",
+    "table": "users"
   },
   "card_reader": {
-    "port": "COM3",
+    "port": "COM10",          // Windows: "COM10", Linux: "/dev/ttyUSB0"
     "baudrate": 9600,
     "timeout": 0.1
   }
 }
 ```
 
-**Wichtig**: 
-- Unter Windows verwenden Sie `COM1`, `COM2`, etc. für den Kartenleser-Port
-- Unter Linux verwenden Sie `/dev/ttyUSB0`, `/dev/ttyACM0`, etc. für den Kartenleser-Port
-- Der korrekte Port kann mit `dmesg | grep tty` oder über die Geräteverwaltung ermittelt werden
+#### Finding the Card Reader Port
 
-## Datenbank-Setup
+**Windows:**
+- Open Device Manager
+- Look under "Ports (COM & LPT)"
+- Find your card reader (e.g., "USB Serial Port (COM10)")
 
-1. Stellen Sie sicher, dass MySQL-Server läuft
-2. Aktivieren Sie das virtuelle Environment:
-   - Windows: `venv\Scripts\activate`
-   - Linux: `source venv/bin/activate`
-3. Führen Sie das Datenbank-Setup-Skript aus:
-   ```bash
-   python database_setup.py
-   ```
-4. Das Skript erstellt automatisch die Datenbank und die notwendigen Tabellen
+**Linux:**
+- List serial devices: `ls /dev/tty*`
+- Common ports: `/dev/ttyUSB0`, `/dev/ttyACM0`
+- Check with: `dmesg | grep tty` after plugging in the reader
 
-### Testbenutzer hinzufügen
+## Running the Application
 
-Nach dem Datenbank-Setup können Sie Testbenutzer hinzufügen:
-
-```sql
-USE coffee_tally;
-INSERT INTO users (card_id, name, credit) VALUES ('CARD123', 'Max Mustermann', 10);
-INSERT INTO users (card_id, name, credit) VALUES ('CARD456', 'Anna Schmidt', 5);
+### Windows
+```cmd
+run.bat
 ```
 
-**Hinweis**: `card_id` ist die ID, die vom Kartenleser gelesen wird. Diese muss eindeutig sein.
-
-## Verwendung
-
-### Entwicklungsumgebung starten
-
-1. Aktivieren Sie das virtuelle Environment:
-   - Windows: `venv\Scripts\activate`
-   - Linux: `source venv/bin/activate`
-2. Starten Sie die Anwendung:
-   ```bash
-   python main.py
-   ```
-3. Zum Beenden drücken Sie `ESC` oder schließen das Fenster
-
-### Produktionsumgebung (Vollbild-Kiosk)
-
-1. Stellen Sie sicher, dass die Anwendung korrekt konfiguriert ist
-2. Für automatischen Start erstellen Sie ein Startup-Skript:
-
-**Windows** (`start_coffee_tally.bat`):
-```batch
-@echo off
-cd /d "C:\Pfad\zum\Projekt"
-call venv\Scripts\activate.bat
-python main.py
-```
-
-**Linux** (`start_coffee_tally.sh`):
+### Linux/Raspberry Pi
 ```bash
-#!/bin/bash
-cd /pfad/zum/projekt
+./run.sh
+```
+
+### Manual Run (Development)
+```bash
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+
+# Linux:
 source venv/bin/activate
+
+# Run the app
 python main.py
 ```
 
-3. Machen Sie das Skript ausführbar (Linux):
+## Utilities
+
+### Test Card Reader
+```bash
+python test_card_reader.py
+```
+
+### Manage Users
+```bash
+python manage_users.py
+```
+
+## Usage
+
+### Main Screen
+- **Default view**: Shows instruction text in English and German
+- Presents a card to deduct one coffee credit
+- Card holder name and remaining credit shown for 5 seconds after successful scan
+
+### Charge Credit
+1. Click "Charge credit / Guthaben laden" button
+2. Use +/- buttons to set the amount
+3. Click OK
+4. Present card to add credit
+
+### Show Credit
+1. Click "Show credit / Guthaben anzeigen" button
+2. Present card
+3. Current credit is displayed for 5 seconds
+
+## Production Deployment
+
+### Windows Service Setup
+For production, you may want to run the app as a Windows service or use Task Scheduler:
+
+1. **Create a startup shortcut**
+   - Create a shortcut to `run.bat`
+   - Place in: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`
+
+2. **Auto-login (Kiosk mode)**
+   - Press Win+R, type `netplwiz`
+   - Uncheck "Users must enter a username..."
+   - Set account to auto-login
+
+### Raspberry Pi Kiosk Setup
+
+1. **Install minimal desktop (if using Raspberry Pi OS Lite)**
    ```bash
-   chmod +x start_coffee_tally.sh
+   sudo apt-get install --no-install-recommends xserver-xorg x11-xserver-utils xinit openbox
    ```
-4. Fügen Sie das Skript zur Autostart-Konfiguration hinzu
 
-### Raspberry Pi Autostart
-
-1. Erstellen Sie eine Desktop-Datei:
+2. **Create autostart script**
    ```bash
-   sudo nano ~/.config/autostart/coffee-tally.desktop
+   mkdir -p ~/.config/openbox
+   nano ~/.config/openbox/autostart
    ```
-2. Fügen Sie folgenden Inhalt ein:
-   ```ini
-   [Desktop Entry]
-   Type=Application
-   Name=Coffee Tally
-   Exec=/pfad/zum/projekt/start_coffee_tally.sh
-   Hidden=false
-   NoDisplay=false
-   X-GNOME-Autostart-enabled=true
-   ```
-3. Machen Sie das Startup-Skript ausführbar
 
-## Bedienung
-
-### Hauptbildschirm
-
-- Die Anwendung zeigt standardmäßig den Text "Show card to deduct coffee credit." / "Karte vorhalten um Kaffeeguthaben abzubuchen"
-- **Charge credit / Guthaben laden**: Öffnet Dialog zum Aufladen von Guthaben
-- **Show credit / Guthaben anzeigen**: Zeigt aktuelles Guthaben an
-
-### Guthaben abziehen
-
-1. Halten Sie eine Karte an den Kartenleser
-2. Die Anwendung erkennt die Karte automatisch
-3. Wenn die Karte gefunden wird und Guthaben vorhanden ist, wird 1 Guthaben abgezogen
-4. Name und verbleibendes Guthaben werden für 5 Sekunden angezeigt
-
-### Guthaben aufladen
-
-1. Klicken Sie auf "Charge credit / Guthaben laden"
-2. Wählen Sie die Anzahl der Kaffees mit +/- Buttons
-3. Klicken Sie auf "OK"
-4. Halten Sie die Karte an den Kartenleser
-5. Das Guthaben wird aufgeladen und für 5 Sekunden angezeigt
-
-### Guthaben anzeigen
-
-1. Klicken Sie auf "Show credit / Guthaben anzeigen"
-2. Halten Sie die Karte an den Kartenleser
-3. Name und aktuelles Guthaben werden für 5 Sekunden angezeigt
-
-## Fehlerbehebung
-
-### Kartenleser wird nicht erkannt
-
-1. Prüfen Sie den COM-Port in der `config.json`
-2. Stellen Sie sicher, dass der Port nicht von anderen Programmen verwendet wird
-3. Unter Linux benötigen Sie möglicherweise Berechtigungen:
+   Add:
    ```bash
-   sudo usermod -a -G dialout $USER
-   # Danach neu einloggen
+   #!/bin/bash
+   # Disable screen blanking
+   xset s off
+   xset -dpms
+   xset s noblank
+   
+   # Hide cursor
+   unclutter -idle 0 &
+   
+   # Start Coffee Tally
+   cd /path/to/coffeetally/srcKivy
+   ./run.sh
    ```
 
-### Datenbankverbindung fehlgeschlagen
+3. **Auto-start X on boot**
+   ```bash
+   nano ~/.bash_profile
+   ```
 
-1. Prüfen Sie ob MySQL-Server läuft
-2. Überprüfen Sie die Verbindungsdaten in `config.json`
-3. Stellen Sie sicher, dass die Datenbank existiert (führen Sie `database_setup.py` aus)
+   Add:
+   ```bash
+   if [ -z "$DISPLAY" ] && [ $(tty) = /dev/tty1 ]; then
+       startx
+   fi
+   ```
 
-### Anwendung startet nicht im Vollbild
+4. **Install unclutter (hides mouse cursor)**
+   ```bash
+   sudo apt-get install unclutter
+   ```
 
-- Die Anwendung verwendet automatisch den Vollbildmodus
-- Zum Beenden drücken Sie `ESC`
+## Troubleshooting
 
-## Technische Details
+### Script Line Endings (Linux)
+- If you see `/bin/bash^M: bad interpreter`, convert scripts to LF line endings:
+   ```bash
+   sed -i 's/\r$//' install.sh run.sh
+   ```
+   Alternatively, use `dos2unix install.sh run.sh` if available.
 
-- **UI-Framework**: PyGame 2.6.1
-- **Datenbank**: MySQL (mysql-connector-python)
-- **Serielle Kommunikation**: pyserial
-- **Kartenleser-Protokoll**: Eltatec TWN4 (einfaches ASCII-Protokoll)
+### Card Reader Not Working
+- **Check COM port**: Verify the port in Device Manager (Windows) or `ls /dev/tty*` (Linux)
+- **Permissions (Linux)**: Add user to dialout group: `sudo usermod -a -G dialout $USER` (logout/login required)
+- **Test connection**: Try a serial terminal program to verify the reader responds
 
-## Lizenz
+### Database Connection Issues
+- Verify MySQL is running: `systemctl status mysql` (Linux) or check Services (Windows)
+- Test credentials: `mysql -u coffee_user -p`
+- Check firewall settings if using remote database
 
-Dieses Projekt ist für den internen Gebrauch bestimmt.
+### Kivy Installation Issues
+**Linux/Raspberry Pi:**
+- If Kivy installation fails, ensure all system dependencies are installed
+- Run `install.sh` which installs necessary SDL libraries
+
+**Windows:**
+- Update pip: `python -m pip install --upgrade pip`
+- Install Visual C++ Build Tools if needed
+
+### Display Issues
+- **Fullscreen not working**: Edit main.py, change `Window.fullscreen = 'auto'` to `Window.fullscreen = True`
+- **Touch not working**: Check Kivy documentation for touch configuration
+- **Resolution issues**: Set window size before fullscreen in main.py
+
+## File Structure
+
+```
+srcKivy/
+├── main.py                 # Main application file
+├── card_reader.py          # Card reader communication module
+├── database.py             # Database operations module
+├── config.json             # Configuration (create from template)
+├── config.json.template    # Configuration template
+├── requirements.txt        # Python dependencies
+├── install.bat             # Windows installation script
+├── install.sh              # Linux installation script
+├── run.bat                 # Windows run script
+├── run.sh                  # Linux run script
+├── vs_back.png             # Background image
+├── venv/                   # Virtual environment (created during install)
+└── README.md               # This file
+```
+
+## Card Reader Protocol
+
+The application uses the Eltatec TWN4 card reader with a simple protocol:
+
+- **Search command**: `050020\r`
+- **Response**: 
+  - `0000` = No card present
+  - Card data = Contains card ID in hex format
+- **Beep command**: `04074B600964006400\r`
+
+## Development
+
+### Adding New Features
+The application is structured in modules:
+- `main.py` - UI and application logic
+- `card_reader.py` - Card reader communication
+- `database.py` - Database operations
+
+### Modifying UI
+- Edit `main.py`
+- Kivy uses dynamic layouts - see [Kivy documentation](https://kivy.org/doc/stable/)
+- KivyMD provides Material Design components - see [KivyMD documentation](https://kivymd.readthedocs.io/)
+
+### Database Schema
+You can extend the users table with additional fields as needed:
+```sql
+ALTER TABLE users ADD COLUMN email VARCHAR(100);
+```
+
+## License
+
+This project is for internal use. Modify as needed for your requirements.
 
 ## Support
 
-Bei Problemen oder Fragen erstellen Sie bitte ein Issue im Projekt-Repository.
+For issues or questions:
+1. Check this README
+2. Review the source code comments
+3. Check Kivy/KivyMD documentation
+4. Verify hardware connections and configurations
+
+## Version History
+
+- **v1.0** - Initial Kivy version
+  - Full-screen kiosk mode
+  - Card reader integration
+  - MySQL database support
+  - Bilingual interface (EN/DE)
+  - Charge and show credit features

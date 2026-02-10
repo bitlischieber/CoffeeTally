@@ -1,0 +1,15 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "your_mysql_user",
+    "password": "your_mysql_password",
+    "database": "coffee_tally",
+    "table": "users"
+  },
+  "card_reader": {
+    "port": "COM10",
+    "baudrate": 9600,
+    "timeout": 0.1
+  }
+}
