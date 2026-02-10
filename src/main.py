@@ -17,10 +17,17 @@ import json
 import os
 import sys
 from threading import Thread, Lock
+from enum import Enum
 from kivy.clock import mainthread
 
 from card_reader import CardReader
 from database import Database
+
+
+class CardMode(Enum):
+    IDLE = "idle"
+    CHARGE = "charge"
+    SHOW_CREDIT = "show_credit"
 
 
 class CoffeeTallyApp(MDApp):
@@ -43,8 +50,7 @@ class CoffeeTallyApp(MDApp):
         self.card_poll_event = None
         self.lock = Lock()
         self.waiting_for_card = False
-        self.charge_mode = False
-        self.show_credit_mode = False
+        self.card_mode = CardMode.IDLE
         
     def build(self):
         """Build the application UI"""
@@ -138,11 +144,15 @@ class CoffeeTallyApp(MDApp):
     def on_card_detected(self, card_id):
         """Handle card detection"""
         print(f"Card detected: {card_id}")
+
+        if self.current_dialog and self.card_mode == CardMode.IDLE:
+            # Ignore card scans while a non-action dialog is open.
+            return
         
-        if self.charge_mode:
+        if self.card_mode == CardMode.CHARGE:
             # Charging credit
             self.process_charge_card(card_id)
-        elif self.show_credit_mode:
+        elif self.card_mode == CardMode.SHOW_CREDIT:
             # Showing credit
             self.process_show_credit_card(card_id)
         else:
@@ -190,8 +200,8 @@ class CoffeeTallyApp(MDApp):
                 self.current_dialog.dismiss()
                 self.current_dialog = None
             
-            # Reset charge mode
-            self.charge_mode = False
+            # Reset mode
+            self.card_mode = CardMode.IDLE
             
             # Show user info
             self.display_user_info(user['name'], new_credit)
@@ -199,7 +209,7 @@ class CoffeeTallyApp(MDApp):
             # Card not found
             if self.current_dialog:
                 self.current_dialog.dismiss()
-            self.charge_mode = False
+            self.card_mode = CardMode.IDLE
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.\nKarte nicht im System registriert.")
     
@@ -215,8 +225,8 @@ class CoffeeTallyApp(MDApp):
                 self.current_dialog.dismiss()
                 self.current_dialog = None
             
-            # Reset show credit mode
-            self.show_credit_mode = False
+            # Reset mode
+            self.card_mode = CardMode.IDLE
             
             # Show user info
             self.display_user_info(user['name'], user['credit'])
@@ -224,7 +234,7 @@ class CoffeeTallyApp(MDApp):
             # Card not found
             if self.current_dialog:
                 self.current_dialog.dismiss()
-            self.show_credit_mode = False
+            self.card_mode = CardMode.IDLE
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.\nKarte nicht im System registriert.")
     
@@ -295,11 +305,11 @@ class CoffeeTallyApp(MDApp):
             ],
         )
         self.current_dialog.open()
-        self.charge_mode = True
+        self.card_mode = CardMode.CHARGE
     
     def cancel_charge(self):
         """Cancel charging operation"""
-        self.charge_mode = False
+        self.card_mode = CardMode.IDLE
         self.dismiss_dialog()
     
     def show_credit_dialog(self, instance):
@@ -319,11 +329,11 @@ class CoffeeTallyApp(MDApp):
             ],
         )
         self.current_dialog.open()
-        self.show_credit_mode = True
+        self.card_mode = CardMode.SHOW_CREDIT
     
     def cancel_show_credit(self):
         """Cancel show credit operation"""
-        self.show_credit_mode = False
+        self.card_mode = CardMode.IDLE
         self.dismiss_dialog()
     
     def dismiss_dialog(self):
