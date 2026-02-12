@@ -22,6 +22,7 @@ from kivy.clock import mainthread
 
 from card_reader import CardReader
 from database import Database
+from error_logging import setup_error_logging
 
 
 class CardMode(Enum):
@@ -51,6 +52,8 @@ class CoffeeTallyApp(MDApp):
         self.lock = Lock()
         self.waiting_for_card = False
         self.card_mode = CardMode.IDLE
+
+
         
     def build(self):
         """Build the application UI"""
@@ -117,7 +120,7 @@ class CoffeeTallyApp(MDApp):
                 self.config_data = json.load(f)
             return True
         except Exception as e:
-            print(f"ERROR: Could not load config.json: {e}")
+            logging.exception("Could not load config.json: %s", e)
             return False
     
     
@@ -383,4 +386,5 @@ class CoffeeTallyApp(MDApp):
 
 
 if __name__ == '__main__':
+    setup_error_logging()
     CoffeeTallyApp().run()
