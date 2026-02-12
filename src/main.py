@@ -104,7 +104,7 @@ class CoffeeTallyApp(MDApp):
                                    "Could not connect to database. Check settings in config.json")
         
         # Start card polling
-        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 1.0)
+        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 0.75)
         
         return Factory.RootLayout()
     
