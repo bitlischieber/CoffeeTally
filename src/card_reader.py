@@ -2,10 +2,13 @@
 Card Reader Module
 Handles communication with Eltatec TWN4 card reader via serial port
 """
+import logging
 import serial
 import time
 import sys
 from threading import Lock
+
+logger = logging.getLogger(__name__)
 
 
 class CardReader:
@@ -63,6 +66,7 @@ class CardReader:
             print(f"✓ Connected to card reader on {port}")
             return True
         except Exception as e:
+            logger.exception("Cannot connect to card reader: %s", e)
             print(f"ERROR: Cannot connect to card reader: {e}")
             print(f"Hint: Check the COM port in config.json")
             return False
@@ -126,12 +130,18 @@ class CardReader:
                                             return card_id
                                             
                                 except (ValueError, IndexError) as e:
+                                    logger.exception(
+                                        "Error parsing card response (%s): %s",
+                                        response_str,
+                                        e,
+                                    )
                                     print(f"Error parsing card response: {e}, response: {response_str}")
                                     return None
                 
                 return None
                 
         except Exception as e:
+            logger.exception("Error reading card: %s", e)
             print(f"Error reading card: {e}")
             return None
     
@@ -150,6 +160,7 @@ class CardReader:
                 self.serial_connection.write(beep_command.encode('ascii'))
                 self.serial_connection.flush()
         except Exception as e:
+            logger.exception("Error sending beep command: %s", e)
             print(f"Error sending beep command: {e}")
     
     def close(self):

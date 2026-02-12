@@ -2,8 +2,11 @@
 Database Module
 Handles MySQL database operations for coffee tally system
 """
+import logging
 import mysql.connector
 from mysql.connector import Error
+
+logger = logging.getLogger(__name__)
 
 
 class Database:
@@ -40,6 +43,7 @@ class Database:
                 return True
             return False
         except Error as e:
+            logger.exception("Cannot connect to database: %s", e)
             print(f"ERROR: Cannot connect to database: {e}")
             return False
     
@@ -54,6 +58,7 @@ class Database:
             dict: User record with fields {id, card_id, name, credit} or None if not found
         """
         if not self.connection or not self.connection.is_connected():
+            logger.error("Database not connected")
             print("ERROR: Database not connected")
             return None
         
@@ -65,6 +70,7 @@ class Database:
             cursor.close()
             return result
         except Error as e:
+            logger.exception("Could not query user: %s", e)
             print(f"ERROR: Could not query user: {e}")
             return None
     
@@ -80,6 +86,7 @@ class Database:
             bool: True if update successful, False otherwise
         """
         if not self.connection or not self.connection.is_connected():
+            logger.error("Database not connected")
             print("ERROR: Database not connected")
             return False
         
@@ -92,6 +99,7 @@ class Database:
             print(f"✓ Updated credit for card {card_id} to {new_credit}")
             return True
         except Error as e:
+            logger.exception("Could not update credit: %s", e)
             print(f"ERROR: Could not update credit: {e}")
             return False
     
@@ -108,6 +116,7 @@ class Database:
             bool: True if user added successfully, False otherwise
         """
         if not self.connection or not self.connection.is_connected():
+            logger.error("Database not connected")
             print("ERROR: Database not connected")
             return False
         
@@ -120,6 +129,7 @@ class Database:
             print(f"✓ Added user {name} with card ID {card_id}")
             return True
         except Error as e:
+            logger.exception("Could not add user: %s", e)
             print(f"ERROR: Could not add user: {e}")
             return False
     
@@ -131,6 +141,7 @@ class Database:
             list: List of user records or empty list if error
         """
         if not self.connection or not self.connection.is_connected():
+            logger.error("Database not connected")
             print("ERROR: Database not connected")
             return []
         
@@ -142,6 +153,7 @@ class Database:
             cursor.close()
             return results
         except Error as e:
+            logger.exception("Could not query users: %s", e)
             print(f"ERROR: Could not query users: {e}")
             return []
     
