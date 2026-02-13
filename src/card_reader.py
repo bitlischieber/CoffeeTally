@@ -163,14 +163,13 @@ class CardReader:
         try:
             with self.lock:
                 if sys.platform == 'win32':
-                    return # no beep during development
-                self.serial_connection.reset_input_buffer()
-                self.serial_connection.reset_output_buffer()
+                    return
+                
                 # Beep command for Eltatec TWN4
                 beep_command = "040728600964006400\r"
                 self.serial_connection.write(beep_command.encode('ascii'))
-                time.sleep(0.05)
-                self.serial_connection.read_all()  # Clear any response
+                self.serial_connection.flush()
+
         except Exception as e:
             logger.exception("Error sending beep command: %s", e)
             print(f"Error sending beep command: {e}")
