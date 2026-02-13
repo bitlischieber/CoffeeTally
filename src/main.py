@@ -16,6 +16,7 @@ from kivymd.uix.dialog import MDDialog
 import json
 import os
 import sys
+import time
 from threading import Thread, Lock
 from enum import Enum
 from kivy.clock import mainthread
@@ -23,7 +24,7 @@ from kivy.clock import mainthread
 from card_reader import CardReader
 from database import Database
 from error_logging import setup_error_logging
-
+from connection_check import ConnectionChecker
 
 class CardMode(Enum):
     IDLE = "idle"
@@ -39,6 +40,8 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
+    wifi_icon = StringProperty("wifi_0.png")
+    db_icon = StringProperty("db_0.png")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -52,8 +55,9 @@ class CoffeeTallyApp(MDApp):
         self.lock = Lock()
         self.waiting_for_card = False
         self.card_mode = CardMode.IDLE
-
-
+        self.health_check_event = None
+        self.health_check_in_progress = False
+        self.connection_checker = None
         
     def build(self):
         """Build the application UI"""
@@ -102,9 +106,15 @@ class CoffeeTallyApp(MDApp):
         if not self.database.connect():
             self.show_error_dialog("Database Error", 
                                    "Could not connect to database. Check settings in config.json")
+
+        self.connection_checker = ConnectionChecker(self.config_data['database'])
         
         # Start card polling
-        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 0.75)
+        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 2.0)
+
+        # Start periodic health checks
+        self.health_check_event = Clock.schedule_interval(self.run_health_check, 180.0)
+        Clock.schedule_once(self.run_health_check, 1.0)
         
         return Factory.RootLayout()
     
@@ -259,6 +269,30 @@ class CoffeeTallyApp(MDApp):
         """Hide user info and return to main screen"""
         self.root.ids.user_info_card.opacity = 0
         self.root.ids.main_label.opacity = 1
+
+    def run_health_check(self, dt):
+        """Run connection checks when idle."""
+        if self.card_mode != CardMode.IDLE:
+            return
+        if self.lock.locked() or self.health_check_in_progress:
+            return
+
+        self.health_check_in_progress = True
+        Thread(target=self._health_check_thread, daemon=True).start()
+
+    def _health_check_thread(self):
+        try:
+            db_ok, internet_ok = self.connection_checker.check(self.database)
+        except Exception:
+            db_ok = False
+            internet_ok = False
+        Clock.schedule_once(lambda dt: self.apply_health_status(db_ok, internet_ok), 0)
+
+    @mainthread
+    def apply_health_status(self, db_ok, internet_ok):
+        self.health_check_in_progress = False
+        self.wifi_icon = "wifi_1.png" if internet_ok else "wifi_0.png"
+        self.db_icon = "db_1.png" if db_ok else "db_0.png"
     
     def show_charge_dialog(self, instance):
         """Show dialog to set charge amount"""
@@ -377,6 +411,9 @@ class CoffeeTallyApp(MDApp):
         """Clean up when app closes"""
         if self.card_poll_event:
             self.card_poll_event.cancel()
+
+        if self.health_check_event:
+            self.health_check_event.cancel()
         
         if self.card_reader:
             self.card_reader.close()

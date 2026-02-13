@@ -67,6 +67,23 @@
                 font_size: "32sp"
                 on_release: app.show_credit_dialog(self)
 
+    MDBoxLayout:
+        orientation: "horizontal"
+        spacing: dp(6)
+        size_hint: (None, None)
+        size: (dp(72), dp(32))
+        pos_hint: {"right": 0.98, "top": 0.98}
+
+        Image:
+            source: app.wifi_icon
+            size_hint: (None, None)
+            size: (dp(32), dp(32))
+
+        Image:
+            source: app.db_icon
+            size_hint: (None, None)
+            size: (dp(32), dp(32))
+
 <ErrorLayout@MDBoxLayout>:
     orientation: "vertical"
     padding: dp(20)
@@ -76,6 +93,17 @@
         text: app.error_text
         halign: "center"
         font_style: "H5"
+
+    MDLabel:
+        text: app.version_text
+        halign: "right"
+        valign: "bottom"
+        theme_text_color: "Hint"
+        font_style: "Caption"
+        size_hint: (None, None)
+        size: self.texture_size
+        text_size: (None, None)
+        on_touch_down: app.on_version_tap(self, args[1])
 
 <ChargeDialogContent@MDBoxLayout>:
     orientation: "vertical"    
@@ -108,18 +136,21 @@
             halign: "center"
             size_hint_x: 0.4
             size_hint_y: None
+            font_size: dp(20)
             size: self.texture_size
 
         MDRaisedButton:
             text: "+"
             size_hint_x: 0.2
             size_hint_y: None
+            font_size: dp(20)
             on_release: app.change_charge_amount(1)
 
         MDRaisedButton:
             text: "+10"
             size_hint_x: 0.2
             size_hint_y: None
+            font_size: dp(20)
             on_release: app.change_charge_amount(10)
     
     MDBoxLayout:
