@@ -2,10 +2,13 @@
 Card Reader Module
 Handles communication with Eltatec TWN4 card reader via serial port
 """
+import logging
 import serial
 import time
 import sys
 from threading import Lock
+
+logger = logging.getLogger(__name__)
 
 
 class CardReader:
@@ -63,9 +66,16 @@ class CardReader:
             print(f"✓ Connected to card reader on {port}")
             return True
         except Exception as e:
+            logger.exception("Cannot connect to card reader: %s", e)
             print(f"ERROR: Cannot connect to card reader: {e}")
             print(f"Hint: Check the COM port in config.json")
             return False
+
+    def ensure_open(self):
+        """Ensure the serial port is open before I/O."""
+        if self.serial_connection and self.serial_connection.is_open:
+            return True
+        return self.connect()
     
     def read_card(self):
         """
@@ -79,15 +89,16 @@ class CardReader:
         Returns:
             str: Card ID in hex format (uppercase) or None if no card present
         """
-        if not self.serial_connection or not self.serial_connection.is_open:
+        if not self.ensure_open():
             return None
         
         try:
             with self.lock:
                 # Send search command to card reader
+                self.serial_connection.reset_input_buffer()
+                self.serial_connection.reset_output_buffer()
                 search_command = "050020\r"
                 self.serial_connection.write(search_command.encode('ascii'))
-                self.serial_connection.flush()
                 
                 # Wait for response
                 time.sleep(0.05)
@@ -126,13 +137,20 @@ class CardReader:
                                             return card_id
                                             
                                 except (ValueError, IndexError) as e:
+                                    logger.exception(
+                                        "Error parsing card response (%s): %s",
+                                        response_str,
+                                        e,
+                                    )
                                     print(f"Error parsing card response: {e}, response: {response_str}")
                                     return None
                 
                 return None
                 
         except Exception as e:
+            logger.exception("Error reading card: %s", e)
             print(f"Error reading card: {e}")
+            self.close()
             return None
     
     def beep(self):
@@ -140,17 +158,22 @@ class CardReader:
         Send a beep command to the card reader
         Provides audio feedback when card is successfully read
         """
-        if not self.serial_connection or not self.serial_connection.is_open:
+        if not self.ensure_open():
             return
         
         try:
             with self.lock:
                 # Beep command for Eltatec TWN4
+                self.serial_connection.reset_input_buffer()
+                self.serial_connection.reset_output_buffer()
                 beep_command = "040728600964006400\r"
                 self.serial_connection.write(beep_command.encode('ascii'))
-                self.serial_connection.flush()
+                time.sleep(0.05)
+                self.serial_connection.read_all()  # Clear any response
         except Exception as e:
+            logger.exception("Error sending beep command: %s", e)
             print(f"Error sending beep command: {e}")
+            self.close()
     
     def close(self):
         """Close the serial connection"""

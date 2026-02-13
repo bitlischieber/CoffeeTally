@@ -3,6 +3,7 @@
 Database backup script for Coffee Tally
 Creates INSERT statements for all database entries
 """
+import logging
 import mysql.connector
 from mysql.connector import Error
 import json
@@ -10,9 +11,12 @@ import sys
 import os
 from datetime import datetime
 
+from error_logging import setup_error_logging
+
 def read_config():
     """Read the configuration file"""
     if not os.path.exists('config.json'):
+        logging.error("config.json not found")
         print("ERROR: config.json not found!")
         print("Please create config.json with the database connection details.")
         sys.exit(1)
@@ -107,6 +111,7 @@ def create_backup():
             print(f"File location: {os.path.abspath(filename)}")
 
     except Error as e:
+        logging.exception("Error during backup: %s", e)
         print(f"Error during backup: {e}")
         sys.exit(1)
     finally:
@@ -117,4 +122,5 @@ def create_backup():
             print("\nMySQL connection closed.")
 
 if __name__ == "__main__":
+    setup_error_logging()
     create_backup()
