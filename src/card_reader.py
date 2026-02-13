@@ -95,10 +95,9 @@ class CardReader:
         try:
             with self.lock:
                 # Send search command to card reader
-                self.serial_connection.reset_input_buffer()
-                self.serial_connection.reset_output_buffer()
                 search_command = "050020\r"
                 self.serial_connection.write(search_command.encode('ascii'))
+                self.serial_connection.flush()
                 
                 # Wait for response
                 time.sleep(0.05)
@@ -163,9 +162,11 @@ class CardReader:
         
         try:
             with self.lock:
-                # Beep command for Eltatec TWN4
+                if sys.platform == 'win32':
+                    return # no beep during development
                 self.serial_connection.reset_input_buffer()
                 self.serial_connection.reset_output_buffer()
+                # Beep command for Eltatec TWN4
                 beep_command = "040728600964006400\r"
                 self.serial_connection.write(beep_command.encode('ascii'))
                 time.sleep(0.05)

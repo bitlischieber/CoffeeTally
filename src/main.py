@@ -106,7 +106,7 @@ class CoffeeTallyApp(MDApp):
                                    "Could not connect to database. Check settings in config.json")
         
         # Start card polling
-        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 0.75)
+        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 0.5)
         
         return Factory.RootLayout()
     
@@ -124,7 +124,7 @@ class CoffeeTallyApp(MDApp):
         except Exception as e:
             logging.exception("Could not load config.json: %s", e)
             return False
-    
+
     
     def poll_card_reader(self, dt):
         """Poll the card reader for cards"""
@@ -166,13 +166,13 @@ class CoffeeTallyApp(MDApp):
     
     def process_deduct_coffee(self, card_id):
         """Process coffee deduction"""
+        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
         if user:
             # Deduct one coffee
             new_credit = user['credit'] - 1
             self.database.update_credit(card_id, new_credit)
-            self.card_reader.beep()
             
             # Show user info
             self.display_user_info(user['name'], new_credit)
@@ -182,7 +182,6 @@ class CoffeeTallyApp(MDApp):
                 # Deduct one coffee from the initial 0 credit
                 new_credit = -1
                 self.database.update_credit(card_id, new_credit)
-                self.card_reader.beep()
                 self.display_user_info(card_id, new_credit)
             else:
                 self.show_info_dialog(
@@ -192,13 +191,13 @@ class CoffeeTallyApp(MDApp):
     
     def process_charge_card(self, card_id):
         """Process charging credit to card"""
+        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
         if user:
             # Add credit
             new_credit = user['credit'] + self.charge_amount
             self.database.update_credit(card_id, new_credit)
-            self.card_reader.beep()
             
             # Close any open dialogs
             if self.current_dialog:
@@ -220,11 +219,10 @@ class CoffeeTallyApp(MDApp):
     
     def process_show_credit_card(self, card_id):
         """Process showing credit for card"""
+        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
-        if user:
-            self.card_reader.beep()
-            
+        if user:            
             # Close any open dialogs
             if self.current_dialog:
                 self.current_dialog.dismiss()
@@ -234,7 +232,7 @@ class CoffeeTallyApp(MDApp):
             self.card_mode = CardMode.IDLE
             
             # Show user info
-            self.display_user_info(user['name'], user['credit'])
+            self.display_user_info(user['name'], user['credit'], True)
         else:
             # Card not found
             if self.current_dialog:
@@ -243,7 +241,7 @@ class CoffeeTallyApp(MDApp):
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.\nKarte nicht im System registriert.")
     
-    def display_user_info(self, name, credit):
+    def display_user_info(self, name, credit, accent_color=False):
         """Display user information for 5 seconds"""
         # Cancel any existing timer
         if self.display_timer:
@@ -254,6 +252,11 @@ class CoffeeTallyApp(MDApp):
         self.root.ids.user_info_card.opacity = 1
         self.root.ids.main_label.opacity = 0
         
+        if accent_color:
+            self.root.ids.user_info_card.md_bg_color = self.theme_cls.accent_color
+        else:
+            self.root.ids.user_info_card.md_bg_color = self.theme_cls.primary_color
+            
         # Schedule hide after 5 seconds
         self.display_timer = Clock.schedule_once(self.hide_user_info, 5.0)
     
