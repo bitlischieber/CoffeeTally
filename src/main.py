@@ -39,6 +39,7 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
+    version_text = StringProperty("v0.1.0")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -52,8 +53,8 @@ class CoffeeTallyApp(MDApp):
         self.lock = Lock()
         self.waiting_for_card = False
         self.card_mode = CardMode.IDLE
-
-
+        self.version_tap_count = 0
+        self.version_tap_start = None
         
     def build(self):
         """Build the application UI"""
@@ -259,6 +260,22 @@ class CoffeeTallyApp(MDApp):
         """Hide user info and return to main screen"""
         self.root.ids.user_info_card.opacity = 0
         self.root.ids.main_label.opacity = 1
+
+    def on_version_tap(self, widget, touch):
+        """Quit the app after 5 taps within 10 seconds on the version label."""
+        if not widget.collide_point(*touch.pos):
+            return False
+
+        now = time.monotonic()
+        if self.version_tap_start is None or (now - self.version_tap_start) > 10:
+            self.version_tap_start = now
+            self.version_tap_count = 1
+        else:
+            self.version_tap_count += 1
+
+        if self.version_tap_count >= 5:
+            self.stop()
+        return True
     
     def show_charge_dialog(self, instance):
         """Show dialog to set charge amount"""
@@ -271,10 +288,12 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="CANCEL",
+                    font_size=20,
                     on_release=lambda x: self.dismiss_dialog()
                 ),
                 MDRaisedButton(
                     text="OK",
+                    font_size=20,
                     on_release=lambda x: self.show_charge_card_prompt()
                 ),
             ],
@@ -303,6 +322,7 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="CANCEL",
+                    font_size=20,
                     on_release=lambda x: self.cancel_charge()
                 ),
             ],
@@ -327,6 +347,7 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="CANCEL",
+                    font_size=20,
                     on_release=lambda x: self.cancel_show_credit()
                 ),
             ],
