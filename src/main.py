@@ -40,7 +40,7 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
-    version_text = StringProperty("v0.1.0")
+    version_text = StringProperty("v0.1.1")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -106,7 +106,7 @@ class CoffeeTallyApp(MDApp):
                                    "Could not connect to database. Check settings in config.json")
         
         # Start card polling
-        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 0.5)
+        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 0.75)
         
         return Factory.RootLayout()
     
@@ -154,6 +154,7 @@ class CoffeeTallyApp(MDApp):
             # Ignore card scans while a non-action dialog is open.
             return
         
+        self.card_reader.beep()        
         if self.card_mode == CardMode.CHARGE:
             # Charging credit
             self.process_charge_card(card_id)
@@ -166,7 +167,6 @@ class CoffeeTallyApp(MDApp):
     
     def process_deduct_coffee(self, card_id):
         """Process coffee deduction"""
-        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
         if user:
@@ -191,7 +191,6 @@ class CoffeeTallyApp(MDApp):
     
     def process_charge_card(self, card_id):
         """Process charging credit to card"""
-        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
         if user:
@@ -219,7 +218,6 @@ class CoffeeTallyApp(MDApp):
     
     def process_show_credit_card(self, card_id):
         """Process showing credit for card"""
-        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
         if user:            
