@@ -37,7 +37,6 @@
             padding: (dp(20), dp(20))
             pos_hint: {"center_x": 0.5}
             elevation: 10
-            md_bg_color: app.theme_cls.primary_color
             opacity: 0
 
             MDLabel:
@@ -66,6 +65,19 @@
                 md_bg_color: app.theme_cls.accent_color
                 font_size: "32sp"
                 on_release: app.show_credit_dialog(self)
+
+    MDLabel:
+        text: app.version_text
+        halign: "right"
+        valign: "bottom"
+        theme_text_color: "Custom"
+        text_color: (1, 1, 1, 0.7)
+        font_style: "Caption"
+        size_hint: (None, None)
+        size: self.texture_size
+        text_size: (None, None)
+        pos_hint: {"right": 0.98, "y": 0.02}
+        on_touch_down: app.on_version_tap(self, args[1])
 
 <ErrorLayout@MDBoxLayout>:
     orientation: "vertical"

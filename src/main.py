@@ -16,12 +16,14 @@ from kivymd.uix.dialog import MDDialog
 import json
 import os
 import sys
+import time
 from threading import Thread, Lock
 from enum import Enum
 from kivy.clock import mainthread
 
 from card_reader import CardReader
 from database import Database
+from error_logging import setup_error_logging
 
 
 class CardMode(Enum):
@@ -38,6 +40,7 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
+    version_text = StringProperty("v0.1.0")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -51,6 +54,8 @@ class CoffeeTallyApp(MDApp):
         self.lock = Lock()
         self.waiting_for_card = False
         self.card_mode = CardMode.IDLE
+        self.version_tap_count = 0
+        self.version_tap_start = None
         
     def build(self):
         """Build the application UI"""
@@ -101,7 +106,7 @@ class CoffeeTallyApp(MDApp):
                                    "Could not connect to database. Check settings in config.json")
         
         # Start card polling
-        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 1.0)
+        self.card_poll_event = Clock.schedule_interval(self.poll_card_reader, 0.5)
         
         return Factory.RootLayout()
     
@@ -117,9 +122,9 @@ class CoffeeTallyApp(MDApp):
                 self.config_data = json.load(f)
             return True
         except Exception as e:
-            print(f"ERROR: Could not load config.json: {e}")
+            logging.exception("Could not load config.json: %s", e)
             return False
-    
+
     
     def poll_card_reader(self, dt):
         """Poll the card reader for cards"""
@@ -161,13 +166,13 @@ class CoffeeTallyApp(MDApp):
     
     def process_deduct_coffee(self, card_id):
         """Process coffee deduction"""
+        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
         if user:
             # Deduct one coffee
             new_credit = user['credit'] - 1
             self.database.update_credit(card_id, new_credit)
-            self.card_reader.beep()
             
             # Show user info
             self.display_user_info(user['name'], new_credit)
@@ -177,7 +182,6 @@ class CoffeeTallyApp(MDApp):
                 # Deduct one coffee from the initial 0 credit
                 new_credit = -1
                 self.database.update_credit(card_id, new_credit)
-                self.card_reader.beep()
                 self.display_user_info(card_id, new_credit)
             else:
                 self.show_info_dialog(
@@ -187,13 +191,13 @@ class CoffeeTallyApp(MDApp):
     
     def process_charge_card(self, card_id):
         """Process charging credit to card"""
+        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
         if user:
             # Add credit
             new_credit = user['credit'] + self.charge_amount
             self.database.update_credit(card_id, new_credit)
-            self.card_reader.beep()
             
             # Close any open dialogs
             if self.current_dialog:
@@ -215,11 +219,10 @@ class CoffeeTallyApp(MDApp):
     
     def process_show_credit_card(self, card_id):
         """Process showing credit for card"""
+        self.card_reader.beep()
         user = self.database.get_user_by_card(card_id)
         
-        if user:
-            self.card_reader.beep()
-            
+        if user:            
             # Close any open dialogs
             if self.current_dialog:
                 self.current_dialog.dismiss()
@@ -229,7 +232,7 @@ class CoffeeTallyApp(MDApp):
             self.card_mode = CardMode.IDLE
             
             # Show user info
-            self.display_user_info(user['name'], user['credit'])
+            self.display_user_info(user['name'], user['credit'], True)
         else:
             # Card not found
             if self.current_dialog:
@@ -238,7 +241,7 @@ class CoffeeTallyApp(MDApp):
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.\nKarte nicht im System registriert.")
     
-    def display_user_info(self, name, credit):
+    def display_user_info(self, name, credit, accent_color=False):
         """Display user information for 5 seconds"""
         # Cancel any existing timer
         if self.display_timer:
@@ -249,6 +252,11 @@ class CoffeeTallyApp(MDApp):
         self.root.ids.user_info_card.opacity = 1
         self.root.ids.main_label.opacity = 0
         
+        if accent_color:
+            self.root.ids.user_info_card.md_bg_color = self.theme_cls.accent_color
+        else:
+            self.root.ids.user_info_card.md_bg_color = self.theme_cls.primary_color
+            
         # Schedule hide after 5 seconds
         self.display_timer = Clock.schedule_once(self.hide_user_info, 5.0)
     
@@ -256,6 +264,22 @@ class CoffeeTallyApp(MDApp):
         """Hide user info and return to main screen"""
         self.root.ids.user_info_card.opacity = 0
         self.root.ids.main_label.opacity = 1
+
+    def on_version_tap(self, widget, touch):
+        """Quit the app after 5 taps within 10 seconds on the version label."""
+        if not widget.collide_point(*touch.pos):
+            return False
+
+        now = time.monotonic()
+        if self.version_tap_start is None or (now - self.version_tap_start) > 10:
+            self.version_tap_start = now
+            self.version_tap_count = 1
+        else:
+            self.version_tap_count += 1
+
+        if self.version_tap_count >= 5:
+            self.stop()
+        return True
     
     def show_charge_dialog(self, instance):
         """Show dialog to set charge amount"""
@@ -268,10 +292,12 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="CANCEL",
+                    font_size=20,
                     on_release=lambda x: self.dismiss_dialog()
                 ),
                 MDRaisedButton(
                     text="OK",
+                    font_size=20,
                     on_release=lambda x: self.show_charge_card_prompt()
                 ),
             ],
@@ -300,6 +326,7 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="CANCEL",
+                    font_size=20,
                     on_release=lambda x: self.cancel_charge()
                 ),
             ],
@@ -324,6 +351,7 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="CANCEL",
+                    font_size=20,
                     on_release=lambda x: self.cancel_show_credit()
                 ),
             ],
@@ -383,4 +411,5 @@ class CoffeeTallyApp(MDApp):
 
 
 if __name__ == '__main__':
+    setup_error_logging()
     CoffeeTallyApp().run()
