@@ -67,6 +67,19 @@
                 font_size: "32sp"
                 on_release: app.show_credit_dialog(self)
 
+    MDLabel:
+        text: app.version_text
+        halign: "right"
+        valign: "bottom"
+        theme_text_color: "Custom"
+        text_color: (1, 1, 1, 0.7)
+        font_style: "Caption"
+        size_hint: (None, None)
+        size: self.texture_size
+        text_size: (None, None)
+        pos_hint: {"right": 0.98, "y": 0.02}
+        on_touch_down: app.on_version_tap(self, args[1])
+
 <ErrorLayout@MDBoxLayout>:
     orientation: "vertical"
     padding: dp(20)
