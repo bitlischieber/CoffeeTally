@@ -16,6 +16,7 @@ from kivymd.uix.dialog import MDDialog
 import json
 import os
 import sys
+import time
 from threading import Thread, Lock
 from enum import Enum
 from kivy.clock import mainthread
