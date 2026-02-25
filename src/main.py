@@ -3,7 +3,7 @@
 Coffee Tally - Kivy Version
 Coffee credit management with card reader
 """
-from datetime import date
+from datetime import datetime
 
 from kivy.lang import Builder
 from kivy.factory import Factory
@@ -232,7 +232,7 @@ class CoffeeTallyApp(MDApp):
             self.card_mode = CardMode.IDLE
             
             # Show user info
-            self.display_user_info(user['name'], user['credit'], date.fromisoformat(user['updated_at']), True)
+            self.display_user_info(user['name'], user['credit'], user['updated_at'], True)
         else:
             # Card not found
             if self.current_dialog:
@@ -241,7 +241,7 @@ class CoffeeTallyApp(MDApp):
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.\nKarte nicht im System registriert.")
             
-    def display_user_info(self, name, credit, last_update_date_time : date = None, accent_color=False):
+    def display_user_info(self, name, credit, last_update_date_time : datetime = None, accent_color=False):
         """Display user information for 5 seconds"""
         # Cancel any existing timer
         if self.display_timer:
