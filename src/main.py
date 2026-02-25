@@ -3,6 +3,8 @@
 Coffee Tally - Kivy Version
 Coffee credit management with card reader
 """
+from datetime import date
+
 from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.core.window import Window
@@ -40,7 +42,7 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
-    version_text = StringProperty("v0.1.1")
+    version_text = StringProperty("v0.1.2")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -230,7 +232,7 @@ class CoffeeTallyApp(MDApp):
             self.card_mode = CardMode.IDLE
             
             # Show user info
-            self.display_user_info(user['name'], user['credit'], True)
+            self.display_user_info(user['name'], user['credit'], date.fromisoformat(user['updated_at']), True)
         else:
             # Card not found
             if self.current_dialog:
@@ -238,15 +240,18 @@ class CoffeeTallyApp(MDApp):
             self.card_mode = CardMode.IDLE
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.\nKarte nicht im System registriert.")
-    
-    def display_user_info(self, name, credit, accent_color=False):
+            
+    def display_user_info(self, name, credit, last_update_date_time : date = None, accent_color=False):
         """Display user information for 5 seconds"""
         # Cancel any existing timer
         if self.display_timer:
             self.display_timer.cancel()
         
         # Update and show user info
-        self.root.ids.user_info_label.text = f"{name}\nCredit: {credit} coffees"
+        if last_update_date_time:
+            self.root.ids.user_info_label.text = f"{name}\nCredit: {credit} coffees\nLast credit update: {last_update_date_time.strftime('%Y-%m-%d %H:%M:%S')}"
+        else:
+            self.root.ids.user_info_label.text = f"{name}\nCredit: {credit} coffees"
         self.root.ids.user_info_card.opacity = 1
         self.root.ids.main_label.opacity = 0
         
