@@ -3,7 +3,7 @@
 Coffee Tally - Kivy Version
 Coffee credit management with card reader
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from kivy.lang import Builder
 from kivy.factory import Factory
@@ -42,7 +42,7 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
-    version_text = StringProperty("v0.1.2")
+    version_text = StringProperty("v0.1.2.1")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -216,7 +216,7 @@ class CoffeeTallyApp(MDApp):
                 self.current_dialog.dismiss()
             self.card_mode = CardMode.IDLE
             self.show_info_dialog("Card Not Found", 
-                                  "Card not registered in system.\nKarte nicht im System registriert.")
+                                  "Card not registered in system.")
     
     def process_show_credit_card(self, card_id):
         """Process showing credit for card"""
@@ -249,7 +249,9 @@ class CoffeeTallyApp(MDApp):
         
         # Update and show user info
         if last_update_date_time:
-            self.root.ids.user_info_label.text = f"{name}\nCredit: {credit} coffees\nLast credit update: {last_update_date_time.strftime('%Y-%m-%d %H:%M:%S')}"
+            # Convert UTC to local time
+            local_time = last_update_date_time.replace(tzinfo=timezone.utc).astimezone()
+            self.root.ids.user_info_label.text = f"{name}\nCredit: {credit} coffees\nLast credit update: {local_time.strftime('%Y-%m-%d %H:%M')}"
         else:
             self.root.ids.user_info_label.text = f"{name}\nCredit: {credit} coffees"
         self.root.ids.user_info_card.opacity = 1
