@@ -16,6 +16,7 @@ from kivymd.uix.button import MDRaisedButton, MDFlatButton
 from kivymd.uix.dialog import MDDialog
 
 import json
+import logging
 import os
 import sys
 import time
@@ -54,6 +55,7 @@ class CoffeeTallyApp(MDApp):
         self.display_timer = None
         self.card_poll_event = None
         self.lock = Lock()
+        self.reading_card = False  # Thread guard to prevent multiple simultaneous card reads
         self.waiting_for_card = False
         self.card_mode = CardMode.IDLE
         self.version_tap_count = 0
@@ -134,18 +136,34 @@ class CoffeeTallyApp(MDApp):
             return
         
         # Read card in background thread to avoid blocking UI
-        Thread(target=self._read_card_thread, daemon=True).start()
+        # Only start a new thread if no read operation is currently in progress
+        if not self.reading_card:
+            Thread(target=self._read_card_thread, daemon=True).start()
     
     def _read_card_thread(self):
         """Read card in background thread"""
-        with self.lock:
+        # Double-check to prevent race conditions
+        if self.reading_card:
+            logging.debug("Card read already in progress, skipping")
+            return
+        
+        self.reading_card = True
+        try:
+            logging.debug("Card read thread started")
             card_id = self.card_reader.read_card()
+            logging.debug(f"Card read result: {card_id}")
+            
             if card_id and card_id != self.last_card_id:
                 self.last_card_id = card_id
                 # Schedule UI update on main thread
                 Clock.schedule_once(lambda dt: self.on_card_detected(card_id), 0)
             if card_id is None:
                 self.last_card_id = None  # Reset last card ID when no card is present
+        except Exception as e:
+            logging.exception(f"Error reading card: {e}")
+        finally:
+            self.reading_card = False
+            logging.debug("Card read thread finished")
                 
     @mainthread
     def on_card_detected(self, card_id):
@@ -239,7 +257,7 @@ class CoffeeTallyApp(MDApp):
                 self.current_dialog.dismiss()
             self.card_mode = CardMode.IDLE
             self.show_info_dialog("Card Not Found", 
-                                  "Card not registered in system.\nKarte nicht im System registriert.")
+                                  "Card not registered in system.")
             
     def display_user_info(self, name, credit, last_update_date_time : datetime = None, accent_color=False):
         """Display user information for 5 seconds"""
