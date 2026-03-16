@@ -435,9 +435,21 @@ For issues or questions:
 
 ## Version History
 
-- **v1.0** - Initial Kivy version
+- **v0.1.0** - Initial Kivy version
   - Full-screen kiosk mode
   - Card reader integration
   - MySQL database support
-  - Bilingual interface (EN/DE)
   - Charge and show credit features
+
+- **v0.1.1** - Bug fixes
+  - Add version info bottom right
+  - Fix reader beep
+  - Can close app by tapping 5 time on the version info text
+
+- **v0.1.2** - Logging and show update date
+  - Optional logging to `error.log` file
+  - Show last credit update date, when showing credit
+
+- **v0.1.3** - Performance improvements and UI fixes
+  - Avoid thread blocking: Card reader operations now run in background thread
+  - Unified dialog button sizes: OK buttons now match Cancel button size
