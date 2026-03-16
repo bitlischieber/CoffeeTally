@@ -449,3 +449,7 @@ For issues or questions:
 - **v0.1.2** - Logging and show update date
   - Optional logging to `error.log` file
   - Show last credit update date, when showing credit
+
+- **v0.1.3** - Performance improvements and UI fixes
+  - Avoid thread blocking: Card reader operations now run in background thread
+  - Unified dialog button sizes: OK buttons now match Cancel button size

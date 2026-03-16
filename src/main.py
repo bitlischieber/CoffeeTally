@@ -144,7 +144,7 @@ class CoffeeTallyApp(MDApp):
         """Read card in background thread"""
         # Double-check to prevent race conditions
         if self.reading_card:
-            logging.debug("Card read already in progress, skipping")
+            logging.warning("Card read already in progress, skipping")
             return
         
         self.reading_card = True
