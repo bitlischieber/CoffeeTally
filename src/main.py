@@ -20,6 +20,7 @@ import logging
 import os
 import sys
 import time
+import logging
 from threading import Thread, Lock
 from enum import Enum
 from kivy.clock import mainthread
@@ -27,7 +28,6 @@ from kivy.clock import mainthread
 from card_reader import CardReader
 from database import Database
 from error_logging import setup_error_logging
-
 
 class CardMode(Enum):
     IDLE = "idle"
@@ -43,7 +43,7 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
-    version_text = StringProperty("v0.1.2.1")
+    version_text = StringProperty("v0.1.3")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -149,9 +149,7 @@ class CoffeeTallyApp(MDApp):
         
         self.reading_card = True
         try:
-            logging.debug("Card read thread started")
             card_id = self.card_reader.read_card()
-            logging.debug(f"Card read result: {card_id}")
             
             if card_id and card_id != self.last_card_id:
                 self.last_card_id = card_id
@@ -163,7 +161,6 @@ class CoffeeTallyApp(MDApp):
             logging.exception(f"Error reading card: {e}")
         finally:
             self.reading_card = False
-            logging.debug("Card read thread finished")
                 
     @mainthread
     def on_card_detected(self, card_id):
@@ -196,6 +193,8 @@ class CoffeeTallyApp(MDApp):
             
             # Show user info
             self.display_user_info(user['name'], new_credit)
+            logging.info("Deduct from Card %s", card_id)
+            
         else:
             # Card not found
             if self.database.add_user(card_id, card_id, initial_credit=0):
@@ -203,11 +202,13 @@ class CoffeeTallyApp(MDApp):
                 new_credit = -1
                 self.database.update_credit(card_id, new_credit)
                 self.display_user_info(card_id, new_credit)
+                logging.info("New card registered: %s", card_id)
             else:
                 self.show_info_dialog(
                     "Card Not Found",
                     "Card not registered in system."
                 )
+                logging.warning("Deduct: Card not found: %s", card_id)   
     
     def process_charge_card(self, card_id):
         """Process charging credit to card"""
@@ -235,7 +236,7 @@ class CoffeeTallyApp(MDApp):
             self.card_mode = CardMode.IDLE
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.")
-    
+            logging.warning("Charge: Card not found: %s", card_id)
     def process_show_credit_card(self, card_id):
         """Process showing credit for card"""
         user = self.database.get_user_by_card(card_id)
@@ -258,7 +259,7 @@ class CoffeeTallyApp(MDApp):
             self.card_mode = CardMode.IDLE
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.")
-            
+            logging.warning("Show Credit: Card not found: %s", card_id)
     def display_user_info(self, name, credit, last_update_date_time : datetime = None, accent_color=False):
         """Display user information for 5 seconds"""
         # Cancel any existing timer
@@ -401,6 +402,7 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="OK",
+                    font_size=20,
                     on_release=lambda x: dialog.dismiss()
                 ),
             ],
@@ -415,6 +417,7 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="OK",
+                    font_size=20,
                     on_release=lambda x: dialog.dismiss()
                 ),
             ],
@@ -434,5 +437,16 @@ class CoffeeTallyApp(MDApp):
 
 
 if __name__ == '__main__':
-    setup_error_logging()
+    # Load config to check log_enable flag
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    log_enabled = False
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                log_enabled = config.get('log_enable', False)
+        except Exception:
+            pass  # If config fails to load, proceed without file logging
+    
+    setup_error_logging(enable_file_logging=log_enabled)
     CoffeeTallyApp().run()

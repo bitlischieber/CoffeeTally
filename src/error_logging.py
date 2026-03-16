@@ -2,35 +2,42 @@
 import logging
 import os
 import sys
-import threading
 
-
-def setup_error_logging():
-    """Configure error logging and unhandled exception hooks."""
-    log_path = os.path.join(os.path.dirname(__file__), "error.log")
-    logging.basicConfig(
-        level=logging.ERROR,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        filename=log_path,
-        filemode="a",
-    )
-
-    def handle_exception(exc_type, exc_value, exc_traceback):
-        if issubclass(exc_type, KeyboardInterrupt):
-            sys.__excepthook__(exc_type, exc_value, exc_traceback)
-            return
-        logging.error(
-            "Unhandled exception",
-            exc_info=(exc_type, exc_value, exc_traceback),
-        )
-
-    sys.excepthook = handle_exception
-
-    if hasattr(threading, "excepthook"):
-        def handle_thread_exception(args):
-            logging.error(
-                "Unhandled thread exception",
-                exc_info=(args.exc_type, args.exc_value, args.exc_traceback),
-            )
-
-        threading.excepthook = handle_thread_exception
+def setup_error_logging(enable_file_logging=False):
+    """Configure error logging.
+    
+    Args:
+        enable_file_logging: If True, log to file. If False, only log to console.
+        
+    Note: We don't set up exception hooks here because Kivy has its own logging system
+    and they can conflict. Use normal logging calls instead.
+    """
+    # Get root logger
+    root_logger = logging.getLogger()
+    
+    # Only configure if not already configured (avoid conflicts with Kivy)
+    if root_logger.handlers:
+        # Already configured, possibly by Kivy
+        pass
+    else:
+        root_logger.setLevel(logging.DEBUG)
+        
+        # Add console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        console_handler.setFormatter(console_formatter)
+        root_logger.addHandler(console_handler)
+    
+    # Add file handler only if enabled
+    if enable_file_logging:
+        try:
+            log_path = os.path.join(os.path.dirname(__file__), "error.log")
+            file_handler = logging.FileHandler(log_path, mode='a')
+            file_handler.setLevel(logging.WARNING)  # Only log WARNING and above
+            formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+            file_handler.setFormatter(formatter)
+            root_logger.addHandler(file_handler)
+            print(f"File logging enabled: {log_path}")
+        except Exception as e:
+            print(f"Warning: Could not set up file logging: {e}", file=sys.stderr)

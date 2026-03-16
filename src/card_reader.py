@@ -8,8 +8,6 @@ import time
 import sys
 from threading import Lock
 
-logger = logging.getLogger(__name__)
-
 
 class CardReader:
     """Class for communicating with the Eltatec TWN4 card reader"""
@@ -64,9 +62,10 @@ class CardReader:
                 stopbits=serial.STOPBITS_ONE
             )
             print(f"✓ Connected to card reader on {port}")
+            logging.info(f"Connected to card reader on {port}")
             return True
         except Exception as e:
-            logger.exception("Cannot connect to card reader: %s", e)
+            logging.exception("Cannot connect to card reader: %s", e)
             print(f"ERROR: Cannot connect to card reader: {e}")
             print(f"Hint: Check the COM port in config.json")
             return False
@@ -136,19 +135,13 @@ class CardReader:
                                             return card_id
                                             
                                 except (ValueError, IndexError) as e:
-                                    logger.exception(
-                                        "Error parsing card response (%s): %s",
-                                        response_str,
-                                        e,
-                                    )
-                                    print(f"Error parsing card response: {e}, response: {response_str}")
+                                    logging.exception("Error parsing card response (%s): %s", response_str, e)
                                     return None
                 
                 return None
                 
         except Exception as e:
-            logger.exception("Error reading card: %s", e)
-            print(f"Error reading card: {e}")
+            logging.exception("Error reading card: %s", e)
             self.close()
             return None
     
@@ -171,12 +164,11 @@ class CardReader:
                 self.serial_connection.flush()
 
         except Exception as e:
-            logger.exception("Error sending beep command: %s", e)
-            print(f"Error sending beep command: {e}")
+            logging.exception("Error sending beep command: %s", e)
             self.close()
     
     def close(self):
         """Close the serial connection"""
         if self.serial_connection and self.serial_connection.is_open:
             self.serial_connection.close()
-            print("Card reader connection closed")
+            logging.info("Card reader connection closed.")
