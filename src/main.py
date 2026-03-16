@@ -149,9 +149,7 @@ class CoffeeTallyApp(MDApp):
         
         self.reading_card = True
         try:
-            logging.debug("Card read thread started")
             card_id = self.card_reader.read_card()
-            logging.debug(f"Card read result: {card_id}")
             
             if card_id and card_id != self.last_card_id:
                 self.last_card_id = card_id
@@ -163,7 +161,6 @@ class CoffeeTallyApp(MDApp):
             logging.exception(f"Error reading card: {e}")
         finally:
             self.reading_card = False
-            logging.debug("Card read thread finished")
                 
     @mainthread
     def on_card_detected(self, card_id):
@@ -405,6 +402,7 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="OK",
+                    font_size=20,
                     on_release=lambda x: dialog.dismiss()
                 ),
             ],
@@ -419,6 +417,7 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="OK",
+                    font_size=20,
                     on_release=lambda x: dialog.dismiss()
                 ),
             ],
