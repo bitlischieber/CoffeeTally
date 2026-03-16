@@ -257,7 +257,7 @@ class CoffeeTallyApp(MDApp):
                 self.current_dialog.dismiss()
             self.card_mode = CardMode.IDLE
             self.show_info_dialog("Card Not Found", 
-                                  "Card not registered in system.\nKarte nicht im System registriert.")
+                                  "Card not registered in system.")
             
     def display_user_info(self, name, credit, last_update_date_time : datetime = None, accent_color=False):
         """Display user information for 5 seconds"""
