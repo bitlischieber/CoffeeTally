@@ -1,11 +1,20 @@
 {
+  "database_provider": "mysql",
   "database": {
-    "host": "localhost",
-    "port": 3306,
-    "user": "your_mysql_user",
-    "password": "your_mysql_password",
-    "database": "coffee_tally",
-    "table": "users"
+    "mysql": {
+      "host": "localhost",
+      "port": 3306,
+      "user": "your_mysql_user",
+      "password": "your_mysql_password",
+      "database": "coffee_tally",
+      "table": "users"
+    },
+    "cosmos": {
+      "endpoint": "https://your-account.documents.azure.com:443/",
+      "key": "your-cosmos-db-primary-key",
+      "database_name": "coffee_tally",
+      "container_name": "users"
+    }
   },
   "card_reader": {
     "port": "COM10",

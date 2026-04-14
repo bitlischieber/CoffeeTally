@@ -6,7 +6,7 @@ Allows adding, removing, and listing users in the coffee tally system
 import json
 import os
 import sys
-from database import Database
+from database import create_database
 
 
 def load_config():
@@ -46,10 +46,10 @@ def list_users(db):
         return
     
     print("\n" + "="*80)
-    print(f"{'ID':<5} {'Card ID':<20} {'Name':<25} {'Credit':<10}")
+    print(f"{'#':<5} {'Card ID':<20} {'Name':<25} {'Credit':<10}")
     print("="*80)
-    for user in users:
-        print(f"{user['id']:<5} {user['card_id']:<20} {user['name']:<25} {user['credit']:<10}")
+    for idx, user in enumerate(users, start=1):
+        print(f"{idx:<5} {user['card_id']:<20} {user['name']:<25} {user['credit']:<10}")
     print("="*80)
     print(f"Total users: {len(users)}")
 
@@ -128,15 +128,28 @@ def delete_user(db):
         return
     
     try:
-        if db.connection and db.connection.is_connected():
-            cursor = db.connection.cursor()
-            query = f"DELETE FROM {db.config['table']} WHERE card_id = %s"
-            cursor.execute(query, (card_id,))
-            db.connection.commit()
-            cursor.close()
-            print(f"\n✓ User '{user['name']}' deleted successfully")
+        # Use provider-agnostic deletion method
+        from database_mysql import Database_MySQL
+        from database_cosmos import Database_Cosmos
+        
+        if isinstance(db, Database_MySQL):
+            if db.connection and db.connection.is_connected():
+                cursor = db.connection.cursor()
+                query = f"DELETE FROM {db.config['table']} WHERE card_id = %s"
+                cursor.execute(query, (card_id,))
+                db.connection.commit()
+                cursor.close()
+                print(f"\n✓ User '{user['name']}' deleted successfully")
+            else:
+                print("ERROR: Database not connected")
+        elif isinstance(db, Database_Cosmos):
+            if db.container:
+                db.container.delete_item(item=user['id'], partition_key=user['card_id'])
+                print(f"\n✓ User '{user['name']}' deleted successfully")
+            else:
+                print("ERROR: Database not connected")
         else:
-            print("ERROR: Database not connected")
+            print("ERROR: Unknown database provider")
     except Exception as e:
         print(f"\n✗ Failed to delete user: {e}")
 
@@ -149,7 +162,7 @@ def main():
         sys.exit(1)
     
     # Connect to database
-    db = Database(config['database'])
+    db = create_database(config)
     if not db.connect():
         print("ERROR: Could not connect to database")
         print("Please check your config.json settings")
