@@ -72,7 +72,8 @@ if [ ! -f config.json ]; then
     cp config.json.template config.json
     echo ""
     echo "IMPORTANT: Please edit config.json and configure:"
-    echo "  - Database connection settings"
+    echo "  - Database provider (mysql or cosmos)"
+    echo "  - Database connection settings (MySQL or Azure Cosmos DB)"
     echo "  - Card reader port (e.g., /dev/ttyUSB0)"
     echo ""
 else
@@ -85,8 +86,8 @@ echo "Installation completed successfully!"
 echo "========================================"
 echo ""
 echo "Next steps:"
-echo "1. Edit config.json with your database and port settings"
-echo "2. Set up the MySQL database (see README.md)"
+echo "1. Edit config.json with your database provider and port settings"
+echo "2. Set up your database (MySQL or Azure Cosmos DB - see README.md)"
 echo "3. Run the application with: ./run.sh"
 echo ""
 
