@@ -1,104 +1,5 @@
 """
-Database Factory Module
-Creates appropriate database instance based on configuration
-"""
-import logging
-from database_mysql import Database_MySQL
-from database_cosmos import Database_Cosmos
-
-logger = logging.getLogger(__name__)
-
-
-def create_database(full_config):
-    """
-    Factory function to create the appropriate database instance
-    
-    Args:
-        full_config: Complete configuration dictionary with 'database_provider' and 'database' keys
-        
-    Returns:
-        Database instance (Database_MySQL or Database_Cosmos)
-        
-    Raises:
-        ValueError: If database_provider is invalid or configuration is missing
-    """
-    provider = full_config.get('database_provider', 'mysql').lower()
-    
-    if provider == 'mysql':
-        if 'mysql' not in full_config.get('database', {}):
-            raise ValueError("MySQL configuration missing in config.json")
-        
-        db_config = full_config['database']['mysql']
-        print(f"Using MySQL database provider")
-        return Database_MySQL(db_config)
-    
-    elif provider == 'cosmos':
-        if 'cosmos' not in full_config.get('database', {}):
-            raise ValueError("Cosmos DB configuration missing in config.json")
-        
-        db_config = full_config['database']['cosmos']
-        print(f"Using Azure Cosmos DB provider")
-        return Database_Cosmos(db_config)
-    
-    else:
-        raise ValueError(f"Unknown database provider: {provider}. Valid options are: 'mysql', 'cosmos'")
-
-
-class Database:
-    """
-    Legacy wrapper class for backward compatibility
-    Delegates to the appropriate database implementation
-    """
-    
-    def __init__(self, config):
-        """
-        Initialize database with legacy config format
-        
-        Args:
-            config: Database configuration (legacy format or new format)
-        """
-        # Check if this is the new format (with mysql/cosmos sub-keys)
-        # or legacy format (direct host/endpoint keys)
-        if 'mysql' in config or 'cosmos' in config:
-            # New format - need database_provider
-            raise ValueError(
-                "Please use create_database() factory function instead of Database() class "
-                "when using new configuration format with database_provider"
-            )
-        else:
-            # Legacy format - assume MySQL
-            logger.warning("Using legacy Database class - please migrate to create_database() factory")
-            self._impl = Database_MySQL(config)
-    
-    def connect(self):
-        return self._impl.connect()
-    
-    def get_user_by_card(self, card_id):
-        return self._impl.get_user_by_card(card_id)
-    
-    def update_credit(self, card_id, new_credit):
-        return self._impl.update_credit(card_id, new_credit)
-    
-    def add_user(self, card_id, name, initial_credit=0):
-        return self._impl.add_user(card_id, name, initial_credit)
-    
-    def get_all_users(self):
-        return self._impl.get_all_users()
-    
-    def close(self):
-        return self._impl.close()
-    
-    @property
-    def connection(self):
-        """For MySQL compatibility"""
-        return getattr(self._impl, 'connection', None)
-    
-    @property
-    def config(self):
-        """For config access"""
-        return self._impl.config
-"""
-Database Module
+Database Module - MySQL Implementation
 Handles MySQL database operations for coffee tally system
 """
 import logging
@@ -108,8 +9,8 @@ from mysql.connector import Error
 logger = logging.getLogger(__name__)
 
 
-class Database:
-    """Class for database operations"""
+class Database_MySQL:
+    """Class for MySQL database operations"""
     
     def __init__(self, config):
         """

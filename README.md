@@ -6,21 +6,40 @@ A touchscreen-friendly coffee credit management system with card reader support 
 
 - 🖥️ **Full-screen kiosk mode** for touchscreen displays
 - 💳 **Card reader support** - Eltatec TWN4 via serial/COM port
-- 🗄️ **MySQL database** - Stores user cards and credits
+- 🗄️ **Flexible database** - MySQL or Azure Cosmos DB
 - 🌍 **Bilingual interface** - English and German
 - 📱 **Modern UI** - Built with Kivy and KivyMD
 - ⚡ **Cross-platform** - Works on Windows and Linux/Raspberry Pi
+
+## Database Options
+
+Coffee Tally supports two database backends:
+
+### MySQL / MariaDB (Default)
+- ✅ **Best for**: Local installations, Raspberry Pi deployments
+- ✅ **Cost**: Free
+- ✅ **Setup**: Simple, runs locally
+- ⚠️ **Backup**: Manual backups required
+
+### Azure Cosmos DB
+- ✅ **Best for**: Cloud deployments, multi-location setups
+- ✅ **Features**: Automatic backups, global distribution, high availability
+- ✅ **Scalability**: Handles high throughput automatically
+- ⚠️ **Cost**: Pay-per-use (RU-based billing)
+- ⚠️ **Requires**: Azure account
+
+Choose your database provider in `config.json` by setting `"database_provider": "mysql"` or `"database_provider": "cosmos"`.
 
 ## System Requirements
 
 ### Windows
 - Python 3.8 or higher
-- MySQL Server
+- MySQL Server (if using MySQL provider) OR Azure Cosmos DB account (if using Cosmos provider)
 - Eltatec TWN4 card reader (connected via COM port)
 
 ### Linux/Raspberry Pi
 - Python 3.8 or higher
-- MySQL Server or MariaDB
+- MySQL Server or MariaDB (if using MySQL provider) OR Azure Cosmos DB account (if using Cosmos provider)
 - Eltatec TWN4 card reader (connected via USB serial)
 - Additional system libraries (installed automatically by install.sh)
 
@@ -43,11 +62,22 @@ chmod +x install.sh run.sh
 ```
 
 ### Step 2: Database Setup
+
+Choose one of the following database options:
+
+#### Option A: MySQL/MariaDB (Default)
+
 1. Start MySQL/MariaDB server
 2. Run the SQL setup script:
    ```bash
-   mysql -u root -p < database_setup.sql
+   mysql -u root -p < database_setup_mysql.sql
    ```
+
+#### Option B: Azure Cosmos DB
+
+1. Create an Azure Cosmos DB account (see detailed guide below)
+2. No SQL script needed - container is created automatically
+3. Update `config.json` with your Cosmos DB credentials (see Configuration section)
 
 ### Step 3: Configuration
 1. Edit `config.json` (created from template):
@@ -150,6 +180,10 @@ run.bat
 
 ### Database Setup
 
+Coffee Tally supports two database backends. Choose the one that fits your needs:
+
+#### Option A: MySQL/MariaDB (Recommended for Local Installations)
+
 1. **Create the database and table**
 
    Connect to MySQL:
@@ -172,10 +206,10 @@ run.bat
    );
    ```
 
-      You can also run the included SQL script instead:
-      ```bash
-      mysql -u root -p < database_setup.sql
-      ```
+   You can also run the included SQL script instead:
+   ```bash
+   mysql -u root -p < database_setup_mysql.sql
+   ```
 
 2. **Add test users (optional)**
    ```sql
@@ -191,26 +225,182 @@ run.bat
    FLUSH PRIVILEGES;
    ```
 
-### Configuration
+4. **Configure `config.json`**
+   ```json
+   {
+     "database_provider": "mysql",
+     "database": {
+       "mysql": {
+         "host": "localhost",
+         "port": 3306,
+         "user": "coffee_user",
+         "password": "your_secure_password",
+         "database": "coffee_tally",
+         "table": "users"
+       }
+     }
+   }
+   ```
 
-Edit `config.json` with your settings:
+#### Option B: Azure Cosmos DB (Recommended for Cloud Deployments)
+
+**Prerequisites:**
+- Azure account ([Get free trial](https://azure.microsoft.com/free/))
+- Azure CLI installed (optional, for automation)
+
+**Step 1: Create Cosmos DB Account**
+
+1. **Via Azure Portal:**
+   - Go to [Azure Portal](https://portal.azure.com)
+   - Click "Create a resource"
+   - Search for "Azure Cosmos DB"
+   - Click "Create"
+   
+2. **Configure the account:**
+   - **Subscription**: Select your Azure subscription
+   - **Resource Group**: Create new or select existing (e.g., "coffee-tally-rg")
+   - **Account Name**: Choose a unique name (e.g., "coffee-tally-db")
+   - **API**: Select **"Core (SQL)" (NoSQL)**
+   - **Location**: Choose the region closest to you
+   - **Capacity mode**: 
+     - **Serverless** (recommended for small/medium usage, pay-per-request)
+     - OR **Provisioned throughput** (for predictable workloads)
+   - Click "Review + create", then "Create"
+   
+3. **Wait for deployment** (usually 2-5 minutes)
+
+**Step 2: Create Database and Container**
+
+After deployment completes:
+
+1. Go to your Cosmos DB account in Azure Portal
+2. In the left menu, click **"Data Explorer"**
+3. Click **"New Container"**
+4. Configure container:
+   - **Database id**: Select "Create new" and enter `coffee_tally`
+   - **Container id**: Enter `users`
+   - **Partition key**: Enter `/card_id`
+   - Click "OK"
+
+**Step 3: Get Connection Credentials**
+
+1. In your Cosmos DB account, go to **"Keys"** in the left menu
+2. Copy the following values:
+   - **URI**: The endpoint URL (e.g., `https://coffee-tally-db.documents.azure.com:443/`)
+   - **PRIMARY KEY**: The access key (long string)
+
+**Step 4: Configure `config.json`**
+
+Edit your `config.json` file:
 
 ```json
 {
+  "database_provider": "cosmos",
   "database": {
-    "host": "localhost",
-    "port": 3306,
-    "user": "coffee_user",
-    "password": "your_secure_password",
-    "database": "coffee_tally",
-    "table": "users"
+    "cosmos": {
+      "endpoint": "https://your-account-name.documents.azure.com:443/",
+      "key": "your-primary-key-here",
+      "database_name": "coffee_tally",
+      "container_name": "users"
+    }
   },
   "card_reader": {
-    "port": "COM10",          // Windows e.g.: "COM10", Linux: "ttyACM0"
+    "port": "COM10",
     "baudrate": 9600,
     "timeout": 0.1
-  }
+  },
+  "log_enable": false
 }
+```
+
+**Important Notes:**
+- Keep your PRIMARY KEY secret - never commit it to source control
+- Use Azure Key Vault or environment variables for production deployments
+- Monitor your usage in Azure Portal to track costs
+- Cosmos DB bills based on Request Units (RUs) consumed
+- For this simple app, serverless mode typically costs <$1/month for light usage
+
+**Step 5: Verify Connection**
+
+Run the application - it will automatically create documents as users are added. No SQL schema setup required!
+
+**Cost Estimation (Serverless Mode):**
+- Storage: $0.25/GB per month
+- Request Units: $0.25 per million RUs
+- Typical usage for small coffee room: <$1-2 per month
+
+### Configuration
+
+Edit `config.json` with your settings. The configuration varies depending on your chosen database provider.
+
+#### Example Configuration with MySQL:
+
+```json
+{
+  "database_provider": "mysql",
+  "database": {
+    "mysql": {
+      "host": "localhost",
+      "port": 3306,
+      "user": "coffee_user",
+      "password": "your_secure_password",
+      "database": "coffee_tally",
+      "table": "users"
+    },
+    "cosmos": {
+      "endpoint": "https://your-account.documents.azure.com:443/",
+      "key": "your-cosmos-db-primary-key",
+      "database_name": "coffee_tally",
+      "container_name": "users"
+    }
+  },
+  "card_reader": {
+    "port": "COM10",
+    "baudrate": 9600,
+    "timeout": 0.1
+  },
+  "log_enable": false
+}
+```
+
+#### Example Configuration with Azure Cosmos DB:
+
+```json
+{
+  "database_provider": "cosmos",
+  "database": {
+    "mysql": {
+      "host": "localhost",
+      "port": 3306,
+      "user": "coffee_user",
+      "password": "your_secure_password",
+      "database": "coffee_tally",
+      "table": "users"
+    },
+    "cosmos": {
+      "endpoint": "https://coffee-tally-db.documents.azure.com:443/",
+      "key": "AbCdEf...your-actual-key...XyZ==",
+      "database_name": "coffee_tally",
+      "container_name": "users"
+    }
+  },
+  "card_reader": {
+    "port": "COM10",
+    "baudrate": 9600,
+    "timeout": 0.1
+  },
+  "log_enable": false
+}
+```
+
+**Configuration Options:**
+
+- **`database_provider`**: Set to `"mysql"` or `"cosmos"` to choose your database backend
+- **`database.mysql`**: MySQL connection settings (used when provider is "mysql")
+- **`database.cosmos`**: Cosmos DB connection settings (used when provider is "cosmos")
+- **`card_reader.port`**: COM port (Windows: "COM10", Linux: "/dev/ttyUSB0" or "/dev/ttyACM0")
+- **`card_reader.baudrate`**: Usually 9600 for TWN4 readers
+- **`log_enable`**: Set to `true` to enable file logging for debugging
 ```
 
 #### Finding the Card Reader Port
@@ -377,19 +567,27 @@ For production, you may want to run the app as a Windows service or use Task Sch
 
 ```
 src/
-├── main.py                 # Main application file
-├── card_reader.py          # Card reader communication module
-├── database.py             # Database operations module
-├── config.json             # Configuration (create from template)
-├── config.json.template    # Configuration template
-├── requirements.txt        # Python dependencies
-├── install.bat             # Windows installation script
-├── install.sh              # Linux installation script
-├── run.bat                 # Windows run script
-├── run.sh                  # Linux run script
-├── vs_back.png             # Background image
-├── venv/                   # Virtual environment (created during install)
-└── README.md               # This file
+├── main.py                     # Main application file
+├── main.kv                     # Kivy UI layout
+├── card_reader.py              # Card reader communication module
+├── database.py                 # Database factory (creates MySQL or Cosmos instance)
+├── database_mysql.py           # MySQL database implementation
+├── database_cosmos.py          # Azure Cosmos DB implementation
+├── error_logging.py            # Error logging setup
+├── manage_users.py             # User management CLI utility
+├── test_card_reader.py         # Card reader testing utility
+├── backup_database.py          # Database backup utility (MySQL)
+├── backup_database.bat         # Windows backup script
+├── database_setup_mysql.sql    # MySQL database schema
+├── config.json                 # Configuration (create from template)
+├── config.json.template        # Configuration template
+├── requirements.txt            # Python dependencies
+├── install.bat                 # Windows installation script
+├── install.sh                  # Linux installation script
+├── run.bat                     # Windows run script
+├── run.sh                      # Linux run script
+├── venv/                       # Virtual environment (created during install)
+└── README.md                   # This file
 ```
 
 ## Card Reader Protocol

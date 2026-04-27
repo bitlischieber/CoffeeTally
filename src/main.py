@@ -26,7 +26,7 @@ from enum import Enum
 from kivy.clock import mainthread
 
 from card_reader import CardReader
-from database import Database
+from database import create_database
 from error_logging import setup_error_logging
 
 class CardMode(Enum):
@@ -43,7 +43,7 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
-    version_text = StringProperty("v0.1.3")
+    version_text = StringProperty("v0.1.4")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -104,7 +104,7 @@ class CoffeeTallyApp(MDApp):
                                    "Could not connect to card reader. Check COM port in config.json")
         
         # Initialize database
-        self.database = Database(self.config_data['database'])
+        self.database = create_database(self.config_data)
         if not self.database.connect():
             self.show_error_dialog("Database Error", 
                                    "Could not connect to database. Check settings in config.json")
@@ -164,12 +164,12 @@ class CoffeeTallyApp(MDApp):
                 
     @mainthread
     def on_card_detected(self, card_id):
-        """Handle card detection"""
-        print(f"Card detected: {card_id}")
-
-        if self.current_dialog and self.card_mode == CardMode.IDLE:
+        """Handle card detection"""      
+        if self.current_dialog and self.current_dialog.parent and self.card_mode == CardMode.IDLE:
             # Ignore card scans while a non-action dialog is open.
             return
+        
+        print(f"Card detected: {card_id}")
         
         self.card_reader.beep()        
         if self.card_mode == CardMode.CHARGE:
@@ -237,6 +237,7 @@ class CoffeeTallyApp(MDApp):
             self.show_info_dialog("Card Not Found", 
                                   "Card not registered in system.")
             logging.warning("Charge: Card not found: %s", card_id)
+            
     def process_show_credit_card(self, card_id):
         """Process showing credit for card"""
         user = self.database.get_user_by_card(card_id)
