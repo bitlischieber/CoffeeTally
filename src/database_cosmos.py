@@ -178,7 +178,7 @@ class Database_Cosmos:
             print(f"ERROR: Could not update user: {e}")
             return False
     
-    def add_user(self, card_id, name, initial_credit=0, username=None, password_hash=None, created_at=None):
+    def add_user(self, card_id, name, initial_credit=0, username=None, password_hash=None, created_at=None, updated_at=None):
         """
         Add a new user to the database
         
@@ -189,6 +189,7 @@ class Database_Cosmos:
             username: Optional username for login (default: None)
             password_hash: Optional password hash for authentication (default: None)
             created_at: Optional creation timestamp (default: current time)
+            updated_at: Optional update timestamp (default: current time)
             
         Returns:
             bool: True if user added successfully, False otherwise
@@ -211,6 +212,16 @@ class Database_Cosmos:
                     created_at_str = created_at
             else:
                 created_at_str = now
+                
+            # Use provided updated_at or current time
+            if updated_at is not None:
+                # If updated_at is a datetime object, convert to ISO format
+                if isinstance(updated_at, datetime):
+                    updated_at_str = updated_at.isoformat()
+                else:
+                    updated_at_str = updated_at
+            else:
+                updated_at_str = now
             
             user_doc = {
                 'id': str(uuid.uuid4()),
@@ -218,7 +229,7 @@ class Database_Cosmos:
                 'name': name,
                 'credit': initial_credit,
                 'created_at': created_at_str,
-                'updated_at': now
+                'updated_at': updated_at_str
             }
             
             # Add optional fields if provided
