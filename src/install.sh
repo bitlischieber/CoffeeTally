@@ -61,7 +61,10 @@ if [ -f /etc/os-release ]; then
             python3-dev \
             libmtdev-dev \
             xclip \
-            xsel
+            xsel \
+            libavcodec-dev \
+            libavformat-dev \
+            libswscale-dev
         echo ""
     fi
 fi

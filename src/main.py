@@ -9,7 +9,7 @@ from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.core.window import Window
 from kivy.clock import Clock
-from kivy.properties import StringProperty, NumericProperty
+from kivy.properties import StringProperty, NumericProperty, BooleanProperty
 
 from kivymd.app import MDApp
 from kivymd.uix.button import MDRaisedButton, MDFlatButton
@@ -29,6 +29,10 @@ from card_reader import CardReader
 from database import create_database
 from error_logging import setup_error_logging
 
+APP_VERSION = "0.1.5"
+IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.bmp'}
+VIDEO_EXTENSIONS = {'.webm', '.mp4', '.avi', '.mkv', '.mov'}
+
 class CardMode(Enum):
     IDLE = "idle"
     CHARGE = "charge"
@@ -43,7 +47,10 @@ class CoffeeTallyApp(MDApp):
     charge_amount = NumericProperty(1)
     wait_prompt_text = StringProperty("")
     error_text = StringProperty("")
-    version_text = StringProperty("v0.1.4")
+    version_text = StringProperty(f"v{APP_VERSION}")
+    bg_source = StringProperty("")
+    bg_is_video = BooleanProperty(False)
+    center_source = StringProperty("")
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -61,10 +68,27 @@ class CoffeeTallyApp(MDApp):
         self.version_tap_count = 0
         self.version_tap_start = None
         
+    def detect_background(self):
+        """Find background.* and center.* files and set the corresponding properties."""
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        for entry in sorted(os.scandir(base_dir), key=lambda e: e.name):
+            stem, ext = os.path.splitext(entry.name)
+            ext_lower = ext.lower()
+            if stem.lower() == 'background':
+                if ext_lower in IMAGE_EXTENSIONS:
+                    self.bg_source = entry.name
+                    self.bg_is_video = False
+                elif ext_lower in VIDEO_EXTENSIONS:
+                    self.bg_source = entry.name
+                    self.bg_is_video = True
+            elif stem.lower() == 'center' and ext_lower in IMAGE_EXTENSIONS:
+                self.center_source = entry.name
+
     def build(self):
         """Build the application UI"""
         kv_path = os.path.join(os.path.dirname(__file__), "main.kv")
         Builder.load_file(kv_path)
+        self.detect_background()
 
         # Configure window based on platform
         # Windows: Fixed size window (1280x720)
@@ -317,12 +341,14 @@ class CoffeeTallyApp(MDApp):
             buttons=[
                 MDFlatButton(
                     text="CANCEL",
-                    font_size=20,
+                    font_style="H5",
+                    size_hint_y = 0.5,
                     on_release=lambda x: self.dismiss_dialog()
                 ),
                 MDRaisedButton(
                     text="OK",
-                    font_size=20,
+                    font_style="H5",
+                    size_hint_y = 0.5,
                     on_release=lambda x: self.show_charge_card_prompt()
                 ),
             ],
