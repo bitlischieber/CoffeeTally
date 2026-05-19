@@ -1,11 +1,23 @@
 #:import dp kivy.metrics.dp
+#:import Video kivy.uix.video.Video
 
 <RootLayout@FloatLayout>:
     canvas.before:
         Rectangle:
-            source: "vs_back.png"
+            source: "" if app.bg_is_video else app.bg_source
             pos: self.pos
             size: self.size
+
+    Video:
+        source: app.bg_source if app.bg_is_video else ""
+        state: 'play' if app.bg_is_video else 'stop'
+        options: {'eos': 'loop'}
+        allow_stretch: True
+        keep_ratio: False
+        pos: self.pos
+        size: self.size
+        volume: 0
+        opacity: 1 if app.bg_is_video else 0
 
     MDBoxLayout:
         orientation: "vertical"
@@ -23,11 +35,12 @@
             text_color: (1, 1, 1, 1)
 
         Image:
-            source: "coffee_cup.png"
+            source: app.center_source
             size_hint: (None, None)
-            size: (dp(170), dp(170))
+            size: (dp(170), dp(170)) if app.center_source else (0, 0)
             halign: "center"
             pos_hint: {"center_x": 0.5}
+            opacity: 1 if app.center_source else 0
 
         MDCard:
             id: user_info_card
@@ -110,28 +123,31 @@
 
         MDRaisedButton:
             text: "-"
+            font_style: "H5"
             size_hint_x: 0.2
-            size_hint_y: None
+            size_hint_y: 0.5
             on_release: app.change_charge_amount(-1)
 
         MDLabel:
             text: str(app.charge_amount)
             font_style: "H4"
             halign: "center"
-            size_hint_x: 0.4
+            size_hint_x: 0.5
             size_hint_y: None
             size: self.texture_size
 
         MDRaisedButton:
             text: "+"
+            font_style: "H5"
             size_hint_x: 0.2
-            size_hint_y: None
+            size_hint_y: 0.5
             on_release: app.change_charge_amount(1)
 
         MDRaisedButton:
             text: "+10"
+            font_style: "H5"
             size_hint_x: 0.2
-            size_hint_y: None
+            size_hint_y: 0.5
             on_release: app.change_charge_amount(10)
     
     MDBoxLayout:
